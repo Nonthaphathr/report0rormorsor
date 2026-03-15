@@ -12,7 +12,7 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy }
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, setDoc, getDoc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   const firebaseConfig = {
     apiKey: "AIzaSyBQtqtZQ-0SpUnNu5C5QHjjePm08rVwXWE",
@@ -25,7 +25,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   window._db = db;
-  window._fbModules = { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy };
+  window._fbModules = { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, setDoc, getDoc };
   window.dispatchEvent(new Event('firebaseReady'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -761,7 +761,7 @@ input:focus, select:focus, textarea:focus {
       <div class="ci" style="background:linear-gradient(135deg,#4A148C,#7B1FA2);">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       </div>
-      <div><div class="ct">ตั้งค่าข้อมูลเริ่มต้น</div><div class="cs">บันทึกไว้ในเครื่อง – โหลดอัตโนมัติทุกครั้งที่เปิดระบบ</div></div>
+      <div><div class="ct">ตั้งค่าข้อมูลเริ่มต้น</div><div class="cs">☁️ บันทึกบน Cloud – ใช้ได้ทุกเครื่องที่เปิดลิงก์นี้ <span id="cfg-sync-label" style="font-size:.72rem;color:#4CAF50;font-weight:700;"></span></div></div>
     </div>
     <div class="grid g2">
       <div class="fg"><label>ชื่อครูผู้สอน (ค่าเริ่มต้น)</label><input type="text" id="cfg-teacher" placeholder="เช่น นายนนทพัทธ์ หิรัญเรือง"></div>
@@ -791,7 +791,7 @@ input:focus, select:focus, textarea:focus {
       </button>
       <button class="btn btn-o" onclick="loadConfig(true)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-        โหลดค่าที่บันทึกไว้
+        ☁️ โหลดค่าจาก Cloud
       </button>
     </div>
   </div>
@@ -968,7 +968,7 @@ window.addEventListener('firebaseReady', async () => {
   _db = window._db; _fm = window._fbModules; fbReady = true;
   await loadDB();
   build106(); build107();
-  loadConfig();
+  await loadConfig();
   document.getElementById('ld').style.display = 'none';
 });
 setTimeout(() => {
@@ -1448,9 +1448,14 @@ document.addEventListener('keydown', e => {
   else if (e.key==='Escape') closePin();
 });
 
-// ─── CONFIG (localStorage) ───
-const CFG_KEY = 'gtw_config';
-function saveConfig() {
+// ─── CONFIG (Firestore + localStorage fallback) ───
+// เก็บใน Firestore collection "config" doc "main" → sync ทุกเครื่อง
+// localStorage เป็น cache ออฟไลน์เท่านั้น
+const CFG_KEY      = 'gtw_config';
+const CFG_FS_PATH  = { col: 'config', docId: 'main' };
+let   _cfgCache    = {};
+
+async function saveConfig() {
   const cfg = {
     teacher:  g('cfg-teacher'),
     group:    g('cfg-group'),
@@ -1458,26 +1463,74 @@ function saveConfig() {
     sem:      g('cfg-sem'),
     deputy:   g('cfg-deputy'),
     director: g('cfg-director'),
+    updatedAt: new Date().toISOString(),
   };
+
+  // 1. บันทึก localStorage (ออฟไลน์ fallback)
   localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+  _cfgCache = cfg;
   applyConfig(cfg);
-  toast('บันทึกการตั้งค่าแล้ว ✓', 'ok');
+
+  // 2. บันทึก Firestore (sync ทุกเครื่อง)
+  if (fbReady) {
+    try {
+      const { doc, setDoc, collection } = _fm;
+      // setDoc with merge:true เพื่อไม่ลบ field อื่น
+      await setDoc(doc(collection(_db, CFG_FS_PATH.col), CFG_FS_PATH.docId), cfg, { merge: true });
+      const ts = new Date().toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'});
+      const lbl = document.getElementById('cfg-sync-label');
+      if(lbl) lbl.textContent = `· sync แล้ว ${ts}`;
+      toast('💾 บันทึกการตั้งค่าสู่ Cloud แล้ว ✓', 'ok');
+    } catch(e) {
+      toast('บันทึก Cloud ไม่สำเร็จ (บันทึกในเครื่องแล้ว): ' + e.message, 'err');
+    }
+  } else {
+    toast('💾 บันทึกการตั้งค่าในเครื่องแล้ว (ยังไม่ได้เชื่อมต่อ Cloud)', 'ok');
+  }
 }
 
-function loadConfig(showToast=false) {
+async function loadConfig(showToast=false) {
+  // 1. โหลด localStorage ก่อน (เร็ว ใช้ได้ทันที)
   try {
-    const cfg = JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
-    // Fill settings form
-    if(cfg.teacher)  document.getElementById('cfg-teacher').value  = cfg.teacher;
-    if(cfg.group)    document.getElementById('cfg-group').value    = cfg.group;
-    if(cfg.year)     document.getElementById('cfg-year').value     = cfg.year;
-    if(cfg.sem)      document.getElementById('cfg-sem').value      = cfg.sem;
-    if(cfg.deputy)   document.getElementById('cfg-deputy').value   = cfg.deputy;
-    if(cfg.director) document.getElementById('cfg-director').value = cfg.director;
-    applyConfig(cfg);
-    if(showToast) toast('โหลดค่าที่บันทึกไว้แล้ว ✓','ok');
+    const local = JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
+    if (Object.keys(local).length) {
+      _cfgCache = local;
+      _fillConfigForm(local);
+      applyConfig(local);
+    }
   } catch(e) {}
-  setTodayDate(); // always set current date on load
+
+  // 2. โหลด Firestore (อาจช้ากว่า แต่ข้อมูล sync ทุกเครื่อง)
+  if (fbReady) {
+    try {
+      const { doc, getDoc, collection } = _fm;
+      const snap = await getDoc(doc(collection(_db, CFG_FS_PATH.col), CFG_FS_PATH.docId));
+      if (snap.exists()) {
+        const cfg = snap.data();
+        _cfgCache = cfg;
+        localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); // อัปเดต cache
+        _fillConfigForm(cfg);
+        applyConfig(cfg);
+        if (showToast) toast('☁️ โหลดค่าจาก Cloud แล้ว ✓', 'ok');
+      } else {
+        if (showToast) toast('ยังไม่มีการตั้งค่าบน Cloud', 'ok');
+      }
+    } catch(e) {
+      if (showToast) toast('โหลด Cloud ไม่สำเร็จ ใช้ค่าในเครื่องแทน', 'err');
+    }
+  }
+
+  setTodayDate();
+}
+
+function _fillConfigForm(cfg) {
+  const s = (id, val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
+  s('cfg-teacher',  cfg.teacher);
+  s('cfg-group',    cfg.group);
+  s('cfg-year',     cfg.year);
+  s('cfg-deputy',   cfg.deputy);
+  s('cfg-director', cfg.director);
+  if(cfg.sem) { const el=document.getElementById('cfg-sem'); if(el) el.value=cfg.sem; }
 }
 
 // ─── SET TODAY DATE on form 106 ───
@@ -1487,7 +1540,7 @@ function setTodayDate() {
   const now   = new Date();
   const day   = now.getDate();
   const month = THAI_MONTHS[now.getMonth()];
-  const yearBE= now.getFullYear() + 543;  // แปลงเป็น พ.ศ.
+  const yearBE= now.getFullYear() + 543;
 
   const elDate  = document.getElementById('d-date');
   const elMonth = document.getElementById('d-month');
@@ -1495,7 +1548,6 @@ function setTodayDate() {
 
   if(elDate)  elDate.value  = day;
   if(elMonth) elMonth.value = month;
-  // ปีการศึกษาให้ set เฉพาะตอนยังไม่มีค่า (อาจถูก applyConfig set ไปแล้ว)
   if(elYear && !elYear.value) elYear.value = yearBE;
 }
 
@@ -1513,6 +1565,8 @@ function applyConfig(cfg) {
 }
 
 function getCfg(key) {
+  // ใช้ _cfgCache ก่อน (sync จาก Firestore แล้ว) ถ้าไม่มีใช้ localStorage
+  if (_cfgCache[key]) return _cfgCache[key];
   try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')[key]||''; } catch(e){ return ''; }
 }
 
