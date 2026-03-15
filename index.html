@@ -12,8 +12,11 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, setDoc, getDoc }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getFirestore, collection, addDoc, getDocs, deleteDoc,
+    doc, query, orderBy, setDoc, getDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
   const firebaseConfig = {
     apiKey: "AIzaSyBQtqtZQ-0SpUnNu5C5QHjjePm08rVwXWE",
     authDomain: "report0rormorsor.firebaseapp.com",
@@ -22,11 +25,25 @@
     messagingSenderId: "545777272626",
     appId: "1:545777272626:web:6eafec03181124bfc8792b"
   };
+
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  window._db = db;
-  window._fbModules = { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, setDoc, getDoc };
-  window.dispatchEvent(new Event('firebaseReady'));
+  const db  = getFirestore(app);
+
+  // expose ทุก function ตรงๆ บน window — ไม่ผ่าน object wrapper
+  window._db         = db;
+  window._fbCol      = (name) => collection(db, name);
+  window._fbDoc      = (colName, docId) => doc(collection(db, colName), docId);
+  window._fbGetDoc   = getDoc;
+  window._fbSetDoc   = setDoc;
+  window._fbAddDoc   = addDoc;
+  window._fbGetDocs  = getDocs;
+  window._fbDeleteDoc= deleteDoc;
+  window._fbQuery    = query;
+  window._fbOrderBy  = orderBy;
+
+  // รอให้ main script โหลดเสร็จก่อน แล้วค่อย fire
+  window._fbResolve && window._fbResolve();
+  window.dispatchEvent(new CustomEvent('firebaseReady'));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
@@ -961,29 +978,48 @@ input:focus, select:focus, textarea:focus {
 // ─── STATE ───
 let sDB = [];
 let fbReady = false;
-let _db, _fm;
 
-// ─── FIREBASE ───
+// ─── FIREBASE READY ───
+// module script fires 'firebaseReady' after it sets window._fb* functions
 window.addEventListener('firebaseReady', async () => {
-  _db = window._db; _fm = window._fbModules; fbReady = true;
+  fbReady = true;
+  console.log('[FB] ready, setDoc=', typeof window._fbSetDoc, 'getDoc=', typeof window._fbGetDoc);
   await loadDB();
   build106(); build107();
   await loadConfig();
   document.getElementById('ld').style.display = 'none';
 });
+
+// fallback — หาก module script โหลดช้า
 setTimeout(() => {
   document.getElementById('ld').style.display = 'none';
-  build106(); build107();
-  loadConfig(); // loadConfig calls setTodayDate internally
-}, 5000);
+  if (!fbReady) { build106(); build107(); loadConfig(); }
+}, 6000);
 
+// ─── FIRESTORE HELPERS ───
+async function fsGetDocs(colName) {
+  return window._fbGetDocs(window._fbCol(colName));
+}
+async function fsAddDoc(colName, data) {
+  return window._fbAddDoc(window._fbCol(colName), data);
+}
+async function fsDeleteDoc(colName, id) {
+  const { deleteDoc } = { deleteDoc: window._fbDeleteDoc };
+  return deleteDoc(window._fbDoc(colName, id));
+}
+async function fsGetDoc(colName, id) {
+  return window._fbGetDoc(window._fbDoc(colName, id));
+}
+async function fsSetDoc(colName, id, data) {
+  return window._fbSetDoc(window._fbDoc(colName, id), data, { merge: true });
+}
+
+// ─── LOAD STUDENTS DB ───
 async function loadDB() {
   try {
-    const { collection, getDocs } = _fm;
-    const snap = await getDocs(collection(_db,'students'));
+    const snap = await fsGetDocs('students');
     sDB = [];
     snap.forEach(d => sDB.push({ id: d.id, ...d.data() }));
-    // Sort client-side to avoid Firestore composite index requirement
     sDB.sort((a,b) => {
       const ca = (a.class||'').localeCompare(b.class||'', 'th');
       if (ca !== 0) return ca;
@@ -992,39 +1028,36 @@ async function loadDB() {
     renderDB(); updateStats();
     toast(`โหลดข้อมูล ${sDB.length} รายการ ✓`, 'ok');
   } catch(e) {
-    toast('โหลด Firestore ไม่สำเร็จ: '+e.message, 'err');
+    toast('โหลด Firestore ไม่สำเร็จ: ' + e.message, 'err');
     document.getElementById('ld').style.display = 'none';
   }
 }
 
 async function saveDB(students) {
   if (!fbReady) { toast('Firebase ยังไม่พร้อม','err'); return; }
-  const { collection, addDoc, getDocs, deleteDoc, doc } = _fm;
   try {
-    const snap = await getDocs(collection(_db,'students'));
-    await Promise.all([...snap.docs].map(d => deleteDoc(doc(_db,'students',d.id))));
-    await Promise.all(students.map(s => addDoc(collection(_db,'students'), s)));
+    const snap = await fsGetDocs('students');
+    await Promise.all([...snap.docs].map(d => fsDeleteDoc('students', d.id)));
+    await Promise.all(students.map(s => fsAddDoc('students', s)));
     await loadDB();
     toast(`บันทึก ${students.length} รายการสำเร็จ ✓`, 'ok');
-  } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message,'err'); }
+  } catch(e) { toast('บันทึกไม่สำเร็จ: ' + e.message, 'err'); }
 }
 
 async function delStudent(id) {
   if (!fbReady) return;
-  const { deleteDoc, doc } = _fm;
-  try { await deleteDoc(doc(_db,'students',id)); await loadDB(); toast('ลบสำเร็จ','ok'); }
+  try { await fsDeleteDoc('students', id); await loadDB(); toast('ลบสำเร็จ','ok'); }
   catch(e) { toast('ลบไม่สำเร็จ','err'); }
 }
 
 async function confirmClear() {
   if (!fbReady) return;
-  const { collection, getDocs, deleteDoc, doc } = _fm;
   try {
-    const snap = await getDocs(collection(_db,'students'));
-    await Promise.all([...snap.docs].map(d => deleteDoc(doc(_db,'students',d.id))));
+    const snap = await fsGetDocs('students');
+    await Promise.all([...snap.docs].map(d => fsDeleteDoc('students', d.id)));
     sDB = []; renderDB(); updateStats();
     toast('ล้างคลังแล้ว ✓','ok');
-  } catch(e) { toast('เกิดข้อผิดพลาด: '+e.message,'err'); }
+  } catch(e) { toast('เกิดข้อผิดพลาด: ' + e.message,'err'); }
 }
 
 // ─── EXCEL IMPORT ───
@@ -1448,51 +1481,48 @@ document.addEventListener('keydown', e => {
   else if (e.key==='Escape') closePin();
 });
 
-// ─── CONFIG (Firestore + localStorage fallback) ───
-// เก็บใน Firestore collection "config" doc "main" → sync ทุกเครื่อง
-// localStorage เป็น cache ออฟไลน์เท่านั้น
-const CFG_KEY      = 'gtw_config';
-const CFG_FS_PATH  = { col: 'config', docId: 'main' };
-let   _cfgCache    = {};
+// ─── CONFIG (Firestore Cloud + localStorage fallback) ───
+const CFG_KEY     = 'gtw_config';
+const CFG_COL     = 'config';
+const CFG_DOC     = 'main';
+let   _cfgCache   = {};
 
 async function saveConfig() {
   const cfg = {
-    teacher:  g('cfg-teacher'),
-    group:    g('cfg-group'),
-    year:     g('cfg-year'),
-    sem:      g('cfg-sem'),
-    deputy:   g('cfg-deputy'),
-    director: g('cfg-director'),
+    teacher:   g('cfg-teacher'),
+    group:     g('cfg-group'),
+    year:      g('cfg-year'),
+    sem:       g('cfg-sem'),
+    deputy:    g('cfg-deputy'),
+    director:  g('cfg-director'),
     updatedAt: new Date().toISOString(),
   };
 
-  // 1. บันทึก localStorage (ออฟไลน์ fallback)
+  // บันทึก localStorage เสมอ (ออฟไลน์ fallback)
   localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
   _cfgCache = cfg;
   applyConfig(cfg);
 
-  // 2. บันทึก Firestore (sync ทุกเครื่อง)
-  if (fbReady) {
-    try {
-      const { doc, setDoc, collection } = _fm;
-      // setDoc with merge:true เพื่อไม่ลบ field อื่น
-      await setDoc(doc(collection(_db, CFG_FS_PATH.col), CFG_FS_PATH.docId), cfg, { merge: true });
-      const ts = new Date().toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'});
-      const lbl = document.getElementById('cfg-sync-label');
-      if(lbl) lbl.textContent = `· sync แล้ว ${ts}`;
-      toast('💾 บันทึกการตั้งค่าสู่ Cloud แล้ว ✓', 'ok');
-    } catch(e) {
-      toast('บันทึก Cloud ไม่สำเร็จ (บันทึกในเครื่องแล้ว): ' + e.message, 'err');
-    }
-  } else {
-    toast('💾 บันทึกการตั้งค่าในเครื่องแล้ว (ยังไม่ได้เชื่อมต่อ Cloud)', 'ok');
+  // บันทึก Firestore
+  if (!fbReady) {
+    toast('💾 บันทึกในเครื่องแล้ว (ยังไม่ได้เชื่อมต่อ Cloud)', 'ok');
+    return;
+  }
+  try {
+    await fsSetDoc(CFG_COL, CFG_DOC, cfg);
+    const ts = new Date().toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'});
+    const lbl = document.getElementById('cfg-sync-label');
+    if (lbl) lbl.textContent = `· sync แล้ว ${ts}`;
+    toast('☁️ บันทึกการตั้งค่าสู่ Cloud แล้ว ✓', 'ok');
+  } catch(e) {
+    toast('⚠️ บันทึก Cloud ไม่สำเร็จ (บันทึกในเครื่องแล้ว): ' + e.message, 'err');
   }
 }
 
 async function loadConfig(showToast=false) {
-  // 1. โหลด localStorage ก่อน (เร็ว ใช้ได้ทันที)
+  // ขั้น 1: โหลด localStorage ก่อนเพื่อแสดงผลเร็ว
   try {
-    const local = JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
+    const local = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
     if (Object.keys(local).length) {
       _cfgCache = local;
       _fillConfigForm(local);
@@ -1500,23 +1530,28 @@ async function loadConfig(showToast=false) {
     }
   } catch(e) {}
 
-  // 2. โหลด Firestore (อาจช้ากว่า แต่ข้อมูล sync ทุกเครื่อง)
+  // ขั้น 2: โหลด Firestore (sync ทุกเครื่อง)
   if (fbReady) {
     try {
-      const { doc, getDoc, collection } = _fm;
-      const snap = await getDoc(doc(collection(_db, CFG_FS_PATH.col), CFG_FS_PATH.docId));
+      const snap = await fsGetDoc(CFG_COL, CFG_DOC);
       if (snap.exists()) {
         const cfg = snap.data();
         _cfgCache = cfg;
-        localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); // อัปเดต cache
+        localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
         _fillConfigForm(cfg);
         applyConfig(cfg);
+        const lbl = document.getElementById('cfg-sync-label');
+        if (lbl && cfg.updatedAt) {
+          const ts = new Date(cfg.updatedAt).toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'});
+          lbl.textContent = `· อัปเดตล่าสุด ${ts}`;
+        }
         if (showToast) toast('☁️ โหลดค่าจาก Cloud แล้ว ✓', 'ok');
       } else {
         if (showToast) toast('ยังไม่มีการตั้งค่าบน Cloud', 'ok');
       }
     } catch(e) {
-      if (showToast) toast('โหลด Cloud ไม่สำเร็จ ใช้ค่าในเครื่องแทน', 'err');
+      console.error('[loadConfig Firestore error]', e);
+      if (showToast) toast('⚠️ โหลด Cloud ไม่สำเร็จ: ' + e.message, 'err');
     }
   }
 
@@ -1565,8 +1600,7 @@ function applyConfig(cfg) {
 }
 
 function getCfg(key) {
-  // ใช้ _cfgCache ก่อน (sync จาก Firestore แล้ว) ถ้าไม่มีใช้ localStorage
-  if (_cfgCache[key]) return _cfgCache[key];
+  if (_cfgCache && _cfgCache[key]) return _cfgCache[key];
   try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')[key]||''; } catch(e){ return ''; }
 }
 
