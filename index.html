@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบออกเอกสารผลการเรียน – โรงเรียนกระดุมทองวิทยา</title>
+<link rel="icon" href="https://nonthaphathr.github.io/uploadimg/logoschool.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyBQtqtZQ-0SpUnNu5C5QHjjePm08rVwXWE",
+    authDomain: "report0rormorsor.firebaseapp.com",
+    projectId: "report0rormorsor",
+    storageBucket: "report0rormorsor.firebasestorage.app",
+    messagingSenderId: "545777272626",
+    appId: "1:545777272626:web:6eafec03181124bfc8792b"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window._db = db;
+  window._fbModules = { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy };
+  window.dispatchEvent(new Event('firebaseReady'));
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+:root {
+  --gold: #C8960C;
+  --gold-light: #F5C842;
+  --gold-pale: #FFFBEA;
+  --gold-mid: #FFF3C4;
+  --gold-border: #E8C547;
+  --dark: #1C1400;
+  --dark2: #3A2800;
+  --white: #FFFFFF;
+  --gray-50: #FAFAF5;
+  --gray-100: #F5F5F0;
+  --gray-200: #E8E8E0;
+  --gray-300: #D8D8C8;
+  --gray-500: #888870;
+  --gray-700: #555540;
+  --gray-900: #1A1A10;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow-card: 0 2px 12px rgba(200,150,12,0.10), 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-hover: 0 8px 28px rgba(200,150,12,0.18);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: #FFFEF5;
+  min-height: 100vh;
+  color: var(--gray-900);
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgba(245,200,66,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(200,150,12,0.06) 0%, transparent 50%);
+}
+
+/* ─── HEADER ─── */
+.header {
+  background: linear-gradient(135deg, #0e0b00 0%, #2a1e00 50%, #0e0b00 100%);
+  padding: 0 28px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 3px 20px rgba(0,0,0,0.35);
+  border-bottom: 1px solid rgba(245,200,66,0.15);
+}
+.h-left { display: flex; align-items: center; gap: 13px; }
+.h-logo {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(245,200,66,0.7);
+  object-fit: cover;
+  animation: pulse-ring 3s ease infinite;
+}
+@keyframes pulse-ring {
+  0%,100% { box-shadow: 0 0 0 0 rgba(245,200,66,0.5); }
+  50%      { box-shadow: 0 0 0 7px rgba(245,200,66,0); }
+}
+.h-titles .t1 { font-size: 1.05rem; font-weight: 700; color: var(--gold-light); letter-spacing: 0.2px; line-height: 1.2; }
+.h-titles .t2 { font-size: 0.7rem; color: rgba(255,255,255,0.45); letter-spacing: 0.5px; margin-top: 1px; }
+.h-nav { display: flex; gap: 5px; }
+.n-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 16px;
+  border: none; border-radius: 8px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.83rem; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+.n-btn.active, .n-btn:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--dark);
+  box-shadow: 0 4px 14px rgba(200,150,12,0.45);
+  transform: translateY(-1px);
+}
+.n-btn:not(.active) { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.65); }
+.n-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+/* ─── LAYOUT ─── */
+.main { max-width: 1080px; margin: 0 auto; padding: 28px 20px; }
+.page { display: none; animation: fade-up 0.3s ease; }
+.page.active { display: block; }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── HERO BANNER ─── */
+.hero {
+  background: linear-gradient(135deg, #1C1400, #3A2800, #1C1400);
+  border-radius: var(--radius);
+  padding: 30px 36px;
+  display: flex; align-items: center; gap: 24px;
+  margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(245,200,66,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-logo { width: 74px; height: 74px; border-radius: 50%; border: 3px solid var(--gold-light); object-fit: cover; flex-shrink: 0; }
+.hero h1 { font-size: 1.45rem; font-weight: 700; color: var(--gold-light); line-height: 1.25; margin-bottom: 5px; }
+.hero p  { font-size: 0.84rem; color: rgba(255,255,255,0.6); line-height: 1.6; }
+.hero-dev { font-size: 0.75rem; color: var(--gold); margin-top: 5px; opacity: 0.9; }
+
+/* ─── CARD ─── */
+.card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(200,150,12,0.10);
+  margin-bottom: 20px;
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: var(--shadow-hover); }
+.ch { display: flex; align-items: center; gap: 11px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1.5px solid var(--gold-pale); }
+.ci { width: 42px; height: 42px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 3px 10px rgba(200,150,12,0.28); }
+.ci svg { width: 20px; height: 20px; color: white; }
+.ct { font-size: 1.08rem; font-weight: 700; }
+.cs { font-size: 0.78rem; color: var(--gray-500); margin-top: 2px; }
+
+/* ─── FORM ─── */
+.fg { display: flex; flex-direction: column; gap: 5px; }
+.grid { display: grid; gap: 14px; margin-bottom: 14px; }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g3 { grid-template-columns: 1fr 1fr 1fr; }
+.g4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.gfull { grid-column: 1 / -1; }
+label { font-size: 0.8rem; font-weight: 600; color: var(--gray-700); }
+label .req { color: #d32f2f; margin-left: 2px; }
+input[type=text], input[type=number], select, textarea {
+  padding: 9px 13px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.9rem; color: var(--gray-900);
+  background: var(--white);
+  transition: border-color 0.18s, box-shadow 0.18s;
+  outline: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(200,150,12,0.14);
+}
+.hint { font-size: 0.73rem; color: var(--gray-500); margin-top: 2px; }
+.divider { height: 1px; background: linear-gradient(to right, transparent, var(--gold-border), transparent); margin: 16px 0; }
+
+/* ─── AUTOCOMPLETE ─── */
+.ac-wrap { position: relative; }
+.ac-list {
+  position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+  background: white; border: 1.5px solid var(--gold-border);
+  border-radius: var(--radius-sm); max-height: 200px; overflow-y: auto;
+  z-index: 300; box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+  display: none;
+}
+.ac-list.open { display: block; }
+.ac-item {
+  padding: 9px 13px; cursor: pointer; font-size: 0.86rem;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--gray-100);
+  transition: background 0.12s;
+}
+.ac-item:last-child { border: none; }
+.ac-item:hover { background: var(--gold-mid); }
+.ac-class { font-size: 0.72rem; color: var(--gray-500); background: var(--gray-100); padding: 2px 7px; border-radius: 20px; }
+
+/* ─── TABLE ─── */
+.t-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1.5px solid var(--gray-200); }
+.st { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.st th {
+  background: linear-gradient(135deg, #201500, #3A2800);
+  color: var(--gold-light);
+  padding: 9px 10px;
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid #4a3500;
+}
+.st td { padding: 6px 7px; border: 1px solid var(--gray-200); vertical-align: middle; text-align: center; }
+.st tr:nth-child(even) td { background: var(--gray-50); }
+.st tr:hover td { background: var(--gold-pale); }
+.st input[type=text], .st input[type=number] {
+  width: 100%; padding: 4px 7px; font-size: 0.81rem;
+  border: 1px solid var(--gray-200); border-radius: 4px; background: transparent;
+}
+.st input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--gold); cursor: pointer; }
+.rn { font-size: 0.75rem; color: var(--gray-500); font-weight: 700; }
+
+/* ─── BUTTONS ─── */
+.bwrap { display: flex; gap: 11px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 11px 26px; border: none; border-radius: 50px;
+  font-family: 'Sarabun', sans-serif; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all 0.22s ease;
+}
+.btn svg { width: 17px; height: 17px; }
+.btn-p { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--dark); box-shadow: 0 4px 14px rgba(200,150,12,0.35); }
+.btn-p:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(200,150,12,0.45); }
+.btn-o { background: transparent; border: 2px solid var(--gold); color: #7a5000; }
+.btn-o:hover { background: var(--gold-mid); transform: translateY(-1px); }
+.btn-d { background: #FFF5F5; border: 2px solid #FFCDD2; color: #C62828; }
+.btn-d:hover { background: #FFEBEE; }
+.btn-sm { padding: 7px 16px; font-size: 0.8rem; border-radius: 20px; }
+
+/* ─── TOAST ─── */
+#tc { position: fixed; top: 82px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 9px; }
+.toast {
+  padding: 13px 18px; background: #1C1400; color: var(--gold-light);
+  border-radius: var(--radius-sm); border-left: 4px solid var(--gold);
+  font-size: 0.86rem; font-weight: 500;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+  animation: sl-in 0.28s ease, sl-out 0.28s ease 2.7s forwards;
+  max-width: 300px;
+}
+.toast.ok  { border-left-color: #4CAF50; }
+.toast.err { border-left-color: #F44336; background: #2a0000; color: #ff8a80; }
+@keyframes sl-in  { from { opacity:0; transform:translateX(36px); } to { opacity:1; transform:translateX(0); } }
+@keyframes sl-out { from { opacity:1; } to { opacity:0; transform:translateX(36px); } }
+
+/* ─── SETTINGS ─── */
+.upload-zone {
+  border: 2.5px dashed var(--gold-border); border-radius: var(--radius);
+  padding: 36px; text-align: center; cursor: pointer;
+  background: var(--gold-pale); transition: all 0.22s;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--gold); background: var(--gold-mid); transform: scale(1.01); }
+.u-icon { font-size: 2.8rem; margin-bottom: 10px; animation: bob 2.2s ease infinite; }
+@keyframes bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+.u-title { font-size: 1rem; font-weight: 700; color: var(--gray-700); margin-bottom: 5px; }
+.u-hint { font-size: 0.79rem; color: var(--gray-500); }
+.db-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.sc { padding: 7px 14px; background: var(--gold-pale); border: 1px solid var(--gold-border); border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: #6b4500; }
+.db-t { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.db-t th { background: var(--gold-pale); color: #5a3c00; padding: 9px 13px; text-align: left; font-weight: 700; border-bottom: 2px solid var(--gold-border); }
+.db-t td { padding: 8px 13px; border-bottom: 1px solid var(--gray-100); }
+.db-t tr:hover td { background: var(--gold-pale); }
+.badge-cls { background: var(--gold-mid); border: 1px solid var(--gold-border); border-radius: 20px; padding: 2px 9px; font-size: 0.72rem; font-weight: 700; color: #6b4500; }
+.del-btn { background: #FFF5F5; border: none; color: #C62828; cursor: pointer; padding: 3px 9px; border-radius: 6px; font-size: 0.78rem; font-family: 'Sarabun', sans-serif; }
+.del-btn:hover { background: #FFEBEE; }
+
+/* ─── PREVIEW WRAP ─── */
+.prev-wrap { background: #C8C8B8; border-radius: var(--radius); padding: 28px; margin-top: 22px; }
+
+/* ─── PRINT DOCUMENT ─── */
+.print-doc {
+  background: white;
+  width: 210mm; min-height: 297mm;
+  margin: 0 auto 20px;
+  padding: 15mm 17mm 14mm 22mm;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.18);
+  font-family: 'Sarabun', sans-serif;
+  font-size: 13.5px; line-height: 1.55; color: #000;
+  position: relative;
+}
+.doc-code { position: absolute; top: 10mm; right: 14mm; font-size: 12px; font-weight: 700; }
+.doc-logo-abs { position: absolute; top: 9mm; left: 17mm; width: 20mm; height: 20mm; object-fit: contain; }
+.doc-title { text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 5px; }
+.doc-right { text-align: right; }
+
+.dt106 { width:100%; border-collapse:collapse; font-size:12.5px; margin: 10px 0; }
+.dt106 th, .dt106 td { border: 1px solid #000; padding: 4px 5px; text-align: center; vertical-align: middle; }
+.dt106 th { font-weight: 700; background: #F8F8F0; line-height: 1.3; }
+.dt106 td.nc { text-align: left; padding-left: 7px; }
+.dt106 td.h28 { height: 26px; }
+
+.dt107 { width:100%; border-collapse:collapse; font-size:12px; margin: 8px 0; }
+.dt107 th, .dt107 td { border: 1px solid #000; padding: 4px 5px; text-align: center; vertical-align: middle; }
+.dt107 th { font-weight: 700; background: #F8F8F0; line-height: 1.3; }
+.dt107 td.nc { text-align: left; padding-left: 7px; }
+.dt107 td.h26 { height: 24px; }
+
+.sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+.sign-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.sign-line { border-bottom: 1px dotted #555; width: 75%; height: 20px; }
+.sign-name { font-size: 12px; }
+.sign-role { font-size: 11px; }
+
+.appr-t { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 14px; }
+.appr-t th, .appr-t td { border: 1px solid #000; padding: 5px 9px; }
+.appr-t th { background: #F8F8F0; font-weight: 700; text-align: center; }
+
+/* ─── PRINT MEDIA (suppress main window print - use printDoc() instead) ─── */
+@media print { body { display: none !important; } }
+
+/* ─── LANDING PAGE ─── */
+.land-wrap {
+  min-height: calc(100vh - 68px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 20px;
+}
+.land-top {
+  text-align: center; margin-bottom: 44px;
+  animation: fade-up 0.5s ease;
+}
+.land-school-logo {
+  width: 96px; height: 96px; border-radius: 50%;
+  border: 4px solid var(--gold-light);
+  object-fit: cover; margin-bottom: 18px;
+  filter: drop-shadow(0 6px 20px rgba(200,150,12,0.3));
+  animation: pulse-ring 3s ease infinite;
+}
+.land-title {
+  font-size: 1.9rem; font-weight: 700;
+  color: var(--dark); line-height: 1.25; margin-bottom: 8px;
+  background: linear-gradient(135deg, #7a5000, var(--gold), #4a3000);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.land-sub { font-size: 1rem; color: var(--gray-500); margin-bottom: 6px; }
+.land-dev { font-size: 0.8rem; color: var(--gold); opacity: 0.85; }
+.land-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+  max-width: 680px;
+  width: 100%;
+  animation: fade-up 0.5s ease 0.15s both;
+}
+.land-card {
+  background: white;
+  border-radius: 18px;
+  padding: 32px 28px;
+  border: 2px solid var(--gray-200);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.land-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--gold-pale), transparent);
+  opacity: 0; transition: opacity 0.25s;
+}
+.land-card:hover { border-color: var(--gold); transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+.land-card:hover::before { opacity: 1; }
+.land-card-icon {
+  width: 64px; height: 64px; border-radius: 16px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px; font-size: 1.8rem;
+  box-shadow: 0 6px 18px rgba(200,150,12,0.32);
+  transition: transform 0.25s;
+}
+.land-card:hover .land-card-icon { transform: scale(1.1) rotate(-3deg); }
+.land-card-code { font-size: 0.75rem; font-weight: 700; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.land-card-name { font-size: 1.05rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; line-height: 1.3; }
+.land-card-desc { font-size: 0.8rem; color: var(--gray-500); line-height: 1.5; }
+.land-card-badge {
+  display: inline-block; margin-top: 14px;
+  padding: 5px 14px; border-radius: 50px;
+  background: var(--gold-pale); border: 1px solid var(--gold-border);
+  font-size: 0.78rem; font-weight: 700; color: #6b4500;
+}
+/* ─── PIN MODAL ─── */
+#pin-modal { display: none; }
+#pin-modal.open { display: flex !important; }
+.pd {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--gray-200); border: 2px solid var(--gray-300);
+  transition: all .15s;
+}
+.pd.filled { background: var(--gold); border-color: var(--gold); transform: scale(1.1); }
+.pd.shake { animation: shake .3s ease; }
+.pk {
+  padding: 14px; border: 1.5px solid var(--gray-200); border-radius: 10px;
+  background: white; font-size: 1.1rem; font-weight: 700;
+  font-family: 'Sarabun', sans-serif; cursor: pointer;
+  transition: all .15s; color: var(--gray-900);
+}
+.pk:hover { background: var(--gold-pale); border-color: var(--gold); }
+.pk:active { background: var(--gold-mid); transform: scale(.95); }
+.pk-del { color: var(--gray-500); font-size: .9rem; }
+.pk-ok { background: linear-gradient(135deg,var(--gold),var(--gold-light)); color: var(--dark); border-color: var(--gold); }
+.pk-ok:hover { opacity:.9; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60%  { transform: translateX(-6px); }
+  40%,80%  { transform: translateX(6px); }
+}
+
+/* ─── SETTINGS SECTION COLLAPSE ─── */
+.sec-toggle {
+  display:flex; align-items:center; justify-content:space-between;
+  cursor:pointer; user-select:none;
+}
+.sec-toggle .arr {
+  width:28px; height:28px; border-radius:50%;
+  background: var(--gold-pale); border: 1px solid var(--gold-border);
+  display:flex; align-items:center; justify-content:center;
+  transition: transform .2s;
+}
+.sec-toggle.open .arr { transform: rotate(180deg); }
+.sec-body { overflow: hidden; transition: max-height .3s ease; max-height: 2000px; }
+.sec-body.closed { max-height: 0; }
+
+/* ─── LOADING ─── */
+.loading {
+  position: fixed; inset: 0;
+  background: rgba(255,253,230,0.94);
+  z-index: 9998; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+}
+.spin {
+  width: 46px; height: 46px;
+  border: 4px solid var(--gray-200); border-top-color: var(--gold);
+  border-radius: 50%; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .g3,.g4 { grid-template-columns: 1fr 1fr; }
+  .g2 { grid-template-columns: 1fr; }
+  .hero { flex-direction: column; text-align: center; }
+  .print-doc { width: 100%; padding: 6mm; min-height: unset; }
+  .h-titles .t2 { display: none; }
+  .n-btn span { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading" id="ld">
+  <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png"
+       style="width:60px;border-radius:50%;border:2.5px solid #C8960C;" alt="">
+  <div class="spin"></div>
+  <div style="font-size:.88rem;color:#5a3c00;font-weight:600;">กำลังโหลดระบบ...</div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="h-left">
+    <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" class="h-logo" alt="logo">
+    <div class="h-titles">
+      <div class="t1">ระบบออกเอกสารผลการเรียน 0, ร, มส.</div>
+      <div class="t2">โรงเรียนกระดุมทองวิทยา · อ.กันทรารมย์ · จ.ศรีสะเกษ</div>
+    </div>
+  </div>
+  <nav class="h-nav">
+    <button class="n-btn active" id="nav-land" onclick="nav('land')" title="หน้าหลัก">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>หน้าหลัก</span>
+    </button>
+    <button class="n-btn" id="nav-106" onclick="nav('106')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>แบบ ร (106)</span>
+    </button>
+    <button class="n-btn" id="nav-107" onclick="nav('107')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>บัญชี O,ร,มส (107)</span>
+    </button>
+    <button class="n-btn" id="nav-demo" onclick="nav('demo')" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      <span>ข้อมูลจำลอง</span>
+    </button>
+    <button class="n-btn" id="nav-set" onclick="askPin('set')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>ตั้งค่า</span>
+    </button>
+  </nav>
+</header>
+<div id="tc"></div>
+
+<!-- PIN MODAL -->
+<div id="pin-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9000;align-items:center;justify-content:center;display:none;">
+  <div style="background:white;border-radius:18px;padding:36px 40px;text-align:center;min-width:300px;box-shadow:0 16px 48px rgba(0,0,0,0.25);animation:fade-up .25s ease;">
+    <div style="width:52px;height:52px;background:linear-gradient(135deg,#C8960C,#F5C842);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    </div>
+    <div style="font-size:1.1rem;font-weight:700;color:#1C1400;margin-bottom:6px;">ใส่รหัสผ่าน</div>
+    <div style="font-size:.82rem;color:#888;margin-bottom:20px;">กรุณาใส่รหัส 4 หลักเพื่อเข้าสู่เมนูตั้งค่า</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;" id="pin-dots">
+      <div class="pd" id="pd0"></div>
+      <div class="pd" id="pd1"></div>
+      <div class="pd" id="pd2"></div>
+      <div class="pd" id="pd3"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:200px;margin:0 auto 16px;">
+      <button class="pk" onclick="pinKey('1')">1</button>
+      <button class="pk" onclick="pinKey('2')">2</button>
+      <button class="pk" onclick="pinKey('3')">3</button>
+      <button class="pk" onclick="pinKey('4')">4</button>
+      <button class="pk" onclick="pinKey('5')">5</button>
+      <button class="pk" onclick="pinKey('6')">6</button>
+      <button class="pk" onclick="pinKey('7')">7</button>
+      <button class="pk" onclick="pinKey('8')">8</button>
+      <button class="pk" onclick="pinKey('9')">9</button>
+      <button class="pk pk-del" onclick="pinDel()">⌫</button>
+      <button class="pk" onclick="pinKey('0')">0</button>
+      <button class="pk pk-ok" onclick="pinOk()">✓</button>
+    </div>
+    <div id="pin-err" style="color:#E53935;font-size:.8rem;min-height:18px;"></div>
+    <button onclick="closePin()" style="margin-top:10px;background:none;border:none;font-size:.82rem;color:#888;cursor:pointer;font-family:'Sarabun',sans-serif;">ยกเลิก</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ══ LANDING PAGE ══ -->
+<div id="p-land" class="page active">
+  <div class="land-wrap">
+    <div class="land-top">
+      <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" class="land-school-logo" alt="logo">
+      <div class="land-title">ระบบออกเอกสารผลการเรียน<br>0, ร, มส.</div>
+      <div class="land-sub">โรงเรียนกระดุมทองวิทยา · อำเภอกันทรารมย์ · จังหวัดศรีสะเกษ</div>
+      <div class="land-dev">⚙️ พัฒนาโดย ครูนนทพัทธ์ หิรัญเรือง</div>
+    </div>
+    <div class="land-cards">
+      <div class="land-card" onclick="nav('106')">
+        <div class="land-card-icon">📋</div>
+        <div class="land-card-code">วก.กทว.106</div>
+        <div class="land-card-name">แบบขออนุญาต<br>ให้ผลการเรียน "ร"</div>
+        <div class="land-card-desc">สำหรับนักเรียนที่ส่งงานไม่ครบ หรือขาดสอบ ยังไม่ผ่านรายวิชา</div>
+        <div class="land-card-badge">เลือกแบบ ร</div>
+      </div>
+      <div class="land-card" onclick="nav('107')">
+        <div class="land-card-icon">📑</div>
+        <div class="land-card-code">วก.กทว.107</div>
+        <div class="land-card-name">บัญชีรายชื่อนักเรียน<br>ที่ติด O, ร, มส</div>
+        <div class="land-card-desc">รายงานรายชื่อนักเรียนที่ติด 0, ร หรือ มส พร้อมผลการแก้ไข</div>
+        <div class="land-card-badge">เลือกบัญชีรายชื่อ</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 106 ══ -->
+<div id="p-106" class="page">
+  <div class="hero">
+    <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" class="hero-logo" alt="">
+    <div>
+      <h1>วก.กทว.106 · แบบขออนุญาตให้ผลการเรียน "ร"</h1>
+      <p>กรอกข้อมูลครูผู้สอน วิชา และรายชื่อนักเรียน แล้วกด <strong style="color:var(--gold-light)">แสดงตัวอย่างเอกสาร</strong></p>
+      <div class="hero-dev">⚙️ พัฒนาโดย ครูนนทพัทธ์ หิรัญเรือง</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg></div>
+      <div><div class="ct">ข้อมูลครูผู้สอนและรายวิชา</div><div class="cs">วก.กทว.106 – ขออนุญาตให้ผลการเรียน "ร"</div></div>
+    </div>
+    <div class="grid g4">
+      <div class="fg"><label>วันที่ <span class="req">*</span></label><input type="text" id="d-date" placeholder="15"></div>
+      <div class="fg"><label>เดือน <span class="req">*</span></label><input type="text" id="d-month" placeholder="มีนาคม"></div>
+      <div class="fg"><label>ภาคเรียนที่</label><select id="d-sem"><option value="1">1</option><option value="2" selected>2</option></select></div>
+      <div class="fg"><label>ปีการศึกษา</label><input type="text" id="d-year" value="2567"></div>
+    </div>
+    <div class="grid g2">
+      <div class="fg"><label>ชื่อครูผู้สอน <span class="req">*</span></label><input type="text" id="d-teacher" value="นายนนทพัทธ์ หิรัญเรือง"></div>
+      <div class="fg"><label>กลุ่มสาระการเรียนรู้ <span class="req">*</span></label><input type="text" id="d-group" value="ภาษาไทย"></div>
+    </div>
+    <div class="grid g4">
+      <div class="fg"><label>ชื่อวิชา <span class="req">*</span></label><input type="text" id="d-sname" placeholder="ภาษาไทย 6"></div>
+      <div class="fg"><label>รหัสวิชา <span class="req">*</span></label><input type="text" id="d-scode" placeholder="ท33102"></div>
+      <div class="fg"><label>หน่วยการเรียน</label><input type="text" id="d-credit" placeholder="1.0"></div>
+      <div class="fg"><label>ชั้นเรียน <span class="req">*</span></label><input type="text" id="d-class" placeholder="ม.6"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+      <div><div class="ct">รายชื่อนักเรียนที่ขออนุญาตให้ "ร"</div><div class="cs">พิมพ์ชื่อเพื่อค้นหาจากคลังชื่อที่ import ไว้</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <label style="margin:0;white-space:nowrap;">จำนวนนักเรียน:</label>
+      <input type="number" id="rc-106" value="5" min="1" max="30" style="width:75px;">
+      <button class="btn btn-o btn-sm" onclick="build106()">🔄 อัปเดตแถว</button>
+    </div>
+    <div class="t-wrap">
+      <table class="st">
+        <thead>
+          <tr>
+            <th rowspan="3" style="width:36px;">ที่</th>
+            <th rowspan="3" style="width:60px;">ชั้น</th>
+            <th rowspan="3" style="width:55px;">เลขที่</th>
+            <th rowspan="3">ชื่อ – สกุล</th>
+            <th colspan="3">เหตุที่ไม่ผ่าน</th>
+            <th rowspan="3" style="width:65px;">หมาย<br>เหตุ</th>
+          </tr>
+          <tr>
+            <th rowspan="2" style="width:55px;">ไม่ส่ง<br>งาน</th>
+            <th colspan="2">ขาดสอบ</th>
+          </tr>
+          <tr>
+            <th style="width:55px;">กลาง<br>ภาค</th>
+            <th style="width:55px;">ปลาย<br>ภาค</th>
+          </tr>
+        </thead>
+        <tbody id="tb-106"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bwrap">
+    <button class="btn btn-p" onclick="prev106()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      แสดงตัวอย่างเอกสาร
+    </button>
+    <button class="btn btn-o" onclick="clear106()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      ล้างข้อมูล
+    </button>
+  </div>
+
+  <div id="pv-106" style="display:none;margin-top:24px;">
+    <div class="bwrap" style="margin-bottom:16px;">
+      <button class="btn btn-p" onclick="printDoc('pv-106-doc')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        🖨️ พิมพ์เอกสาร
+      </button>
+    </div>
+    <div class="prev-wrap" id="pv-106-doc"></div>
+  </div>
+</div>
+
+<!-- ══ PAGE 107 ══ -->
+<div id="p-107" class="page">
+  <div class="hero">
+    <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" class="hero-logo" alt="">
+    <div>
+      <h1>วก.กทว.107 · บัญชีรายชื่อนักเรียนที่ติด O, ร, มส</h1>
+      <p>กรอกข้อมูลวิชาและรายชื่อนักเรียนพร้อมผลการสอบและผลการแก้ไข</p>
+      <div class="hero-dev">⚙️ พัฒนาโดย ครูนนทพัทธ์ หิรัญเรือง</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      <div><div class="ct">ข้อมูลรายวิชา</div><div class="cs">วก.กทว.107 – บัญชีรายชื่อ O, ร, มส</div></div>
+    </div>
+    <div class="grid g4">
+      <div class="fg"><label>ชื่อวิชา <span class="req">*</span></label><input type="text" id="e-sname" placeholder="ภาษาไทย 2"></div>
+      <div class="fg"><label>รหัสวิชา <span class="req">*</span></label><input type="text" id="e-scode" placeholder="ท21102"></div>
+      <div class="fg"><label>กลุ่มสาระ</label><input type="text" id="e-group" value="ภาษาไทย"></div>
+      <div class="fg"><label>ชื่อครูผู้สอน</label><input type="text" id="e-teacher" value="นายนนทพัทธ์ หิรัญเรือง"></div>
+    </div>
+    <div class="grid g2" style="margin-top:0;">
+      <div class="fg"><label>ภาคเรียนที่</label><select id="e-sem"><option value="1">1</option><option value="2" selected>2</option></select></div>
+      <div class="fg"><label>ปีการศึกษา</label><input type="text" id="e-year" value="2567"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+      <div><div class="ct">รายชื่อนักเรียนที่ติด O, ร, มส</div><div class="cs">ระบุห้อง ชื่อ ผลการสอบ และผลการแก้ไข</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <label style="margin:0;white-space:nowrap;">จำนวนนักเรียน:</label>
+      <input type="number" id="rc-107" value="5" min="1" max="30" style="width:75px;">
+      <button class="btn btn-o btn-sm" onclick="build107()">🔄 อัปเดตแถว</button>
+    </div>
+    <div class="t-wrap">
+      <table class="st">
+        <thead>
+          <tr>
+            <th rowspan="2" style="width:36px;">ที่</th>
+            <th rowspan="2" style="width:65px;">ห้อง</th>
+            <th rowspan="2">ชื่อ – สกุล</th>
+            <th colspan="3">ผลการสอบ</th>
+            <th colspan="4">แก้ไขแล้ว</th>
+            <th rowspan="2" style="width:60px;">หมาย<br>เหตุ</th>
+          </tr>
+          <tr>
+            <th style="width:36px;">O</th>
+            <th style="width:36px;">ร</th>
+            <th style="width:36px;">มส</th>
+            <th style="width:36px;">1</th>
+            <th style="width:36px;">O</th>
+            <th style="width:36px;">ร</th>
+            <th style="width:36px;">มส</th>
+          </tr>
+        </thead>
+        <tbody id="tb-107"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bwrap">
+    <button class="btn btn-p" onclick="prev107()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      แสดงตัวอย่างเอกสาร
+    </button>
+    <button class="btn btn-o" onclick="clear107()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      ล้างข้อมูล
+    </button>
+  </div>
+
+  <div id="pv-107" style="display:none;margin-top:24px;">
+    <div class="bwrap" style="margin-bottom:16px;">
+      <button class="btn btn-p" onclick="printDoc('pv-107-doc')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        🖨️ พิมพ์เอกสาร
+      </button>
+    </div>
+    <div class="prev-wrap" id="pv-107-doc"></div>
+  </div>
+</div>
+
+<!-- ══ PAGE SETTINGS ══ -->
+<div id="p-set" class="page">
+  <div class="hero">
+    <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" class="hero-logo" alt="">
+    <div>
+      <h1>⚙️ ตั้งค่าระบบ · คลังชื่อนักเรียน</h1>
+      <p>นำเข้าชื่อนักเรียนจาก Excel เพื่อใช้ระบบแนะนำชื่ออัตโนมัติ<br>
+      ต้องมีคอลัมน์: <strong style="color:var(--gold-light)">คำนำหน้า · ชื่อ · สกุล · ระดับชั้น</strong></p>
+      <div class="hero-dev">⚙️ พัฒนาโดย ครูนนทพัทธ์ หิรัญเรือง</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ci" style="background:linear-gradient(135deg,#4A148C,#7B1FA2);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </div>
+      <div><div class="ct">ตั้งค่าข้อมูลเริ่มต้น</div><div class="cs">บันทึกไว้ในเครื่อง – โหลดอัตโนมัติทุกครั้งที่เปิดระบบ</div></div>
+    </div>
+    <div class="grid g2">
+      <div class="fg"><label>ชื่อครูผู้สอน (ค่าเริ่มต้น)</label><input type="text" id="cfg-teacher" placeholder="เช่น นายนนทพัทธ์ หิรัญเรือง"></div>
+      <div class="fg"><label>กลุ่มสาระการเรียนรู้ (ค่าเริ่มต้น)</label><input type="text" id="cfg-group" placeholder="เช่น ภาษาไทย"></div>
+    </div>
+    <div class="grid g2" style="margin-top:0;">
+      <div class="fg"><label>ปีการศึกษา (ค่าเริ่มต้น)</label><input type="text" id="cfg-year" placeholder="เช่น 2567"></div>
+      <div class="fg"><label>ภาคเรียนที่ (ค่าเริ่มต้น)</label><select id="cfg-sem"><option value="1">1</option><option value="2" selected>2</option></select></div>
+    </div>
+    <div class="divider"></div>
+    <div class="grid g2">
+      <div class="fg">
+        <label>ชื่อ-สกุล รองผู้อำนวยการ (ในวงเล็บ)</label>
+        <input type="text" id="cfg-deputy" placeholder="เช่น นางสุคันทร บาอินทร์">
+        <div class="hint">จะแสดงเป็น (นางสุคันทร บาอินทร์)</div>
+      </div>
+      <div class="fg">
+        <label>ชื่อ-สกุล ผู้อำนวยการ (ในวงเล็บ)</label>
+        <input type="text" id="cfg-director" placeholder="เช่น นางสุนิสา ใจใหญ่">
+        <div class="hint">จะแสดงเป็น (นางสุนิสา ใจใหญ่)</div>
+      </div>
+    </div>
+    <div class="bwrap" style="justify-content:flex-start;margin-top:16px;">
+      <button class="btn btn-p" onclick="saveConfig()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        💾 บันทึกการตั้งค่า
+      </button>
+      <button class="btn btn-o" onclick="loadConfig(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        โหลดค่าที่บันทึกไว้
+      </button>
+    </div>
+  </div>
+
+  <!-- ── FONT UPLOAD CARD ── -->
+  <div class="card">
+    <div class="ch">
+      <div class="ci" style="background:linear-gradient(135deg,#00695C,#00897B);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+        </svg>
+      </div>
+      <div><div class="ct">ฟอนต์เอกสาร</div><div class="cs">อัปโหลด .ttf / .otf / .woff / .woff2 เพื่อใช้แสดงในเอกสารที่พิมพ์</div></div>
+    </div>
+
+    <!-- Upload zone -->
+    <div id="font-zone" class="upload-zone" style="padding:24px;"
+         onclick="document.getElementById('font-input').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="event.preventDefault();this.classList.remove('drag');handleFontDrop(event)">
+      <div class="u-icon" style="font-size:2.2rem;">🔤</div>
+      <div class="u-title">คลิก หรือ ลากไฟล์ฟอนต์มาวางที่นี่</div>
+      <div class="u-hint">รองรับ .ttf · .otf · .woff · .woff2 (อัปโหลดได้หลายไฟล์พร้อมกัน)</div>
+    </div>
+    <input type="file" id="font-input" accept=".ttf,.otf,.woff,.woff2" multiple style="display:none"
+           onchange="handleFontFiles(this.files)">
+
+    <!-- Loaded fonts list -->
+    <div id="font-list" style="margin-top:16px;display:none;">
+      <div style="font-weight:700;font-size:.85rem;color:var(--gray-700);margin-bottom:10px;">ฟอนต์ที่โหลดแล้ว:</div>
+      <div id="font-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
+      <div class="grid g2">
+        <div class="fg">
+          <label>เลือกฟอนต์สำหรับเอกสาร</label>
+          <select id="font-select" onchange="previewFont()">
+            <option value="">-- ใช้ฟอนต์เริ่มต้น (Sarabun) --</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>ตัวอย่างข้อความ</label>
+          <div id="font-preview-box" style="
+            padding:10px 14px;
+            border:1.5px solid var(--gray-200);
+            border-radius:var(--radius-sm);
+            font-size:15px;
+            line-height:1.8;
+            min-height:46px;
+            background:var(--gold-pale);
+            transition:font-family .2s;
+          ">โรงเรียนกระดุมทองวิทยา · ผลการเรียน ร มส ๐</div>
+        </div>
+      </div>
+      <div class="bwrap" style="justify-content:flex-start;margin-top:12px;gap:10px;">
+        <button class="btn btn-p" onclick="applyFont()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          ใช้ฟอนต์นี้กับเอกสาร
+        </button>
+        <button class="btn btn-o" onclick="clearFonts()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/>
+          </svg>
+          ล้างฟอนต์ทั้งหมด
+        </button>
+      </div>
+      <div id="font-active-label" class="hint" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+      <div><div class="ct">นำเข้าข้อมูลจาก Excel</div><div class="cs">รองรับ .xlsx และ .xls</div></div>
+    </div>
+    <div class="upload-zone" id="uz" onclick="document.getElementById('xi').click()"
+         ondragover="dov(event)" ondragleave="dlv()" ondrop="ddr(event)">
+      <div class="u-icon">📊</div>
+      <div class="u-title">คลิก หรือ ลากไฟล์ Excel มาวางที่นี่</div>
+      <div class="u-hint">รองรับ .xlsx / .xls · Header: <strong>คำนำหน้า | ชื่อ | สกุล | ระดับชั้น</strong></div>
+    </div>
+    <input type="file" id="xi" accept=".xlsx,.xls" style="display:none" onchange="importXls(event)">
+    <div style="display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-o btn-sm" onclick="downloadTemplate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        ดาวน์โหลด Template Excel
+      </button>
+      <span class="hint">⬅️ โหลดไฟล์ตัวอย่าง เปิดใน Excel กรอกข้อมูลแล้ว Import กลับมา</span>
+    </div>
+    <div class="hint" style="margin-top:8px;">💡 ชื่อคอลัมน์ไม่ต้องตรงทุกตัวอักษร – ระบบจะจับคู่อัตโนมัติ เช่น "ชื่อ", "firstname", "name" ใช้ได้ทั้งหมด</div>
+  </div>
+
+  <div class="card">
+    <div class="ch">
+      <div class="ci" style="background:linear-gradient(135deg,#0D47A1,#1565C0);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      </div>
+      <div><div class="ct">คลังชื่อนักเรียน (Firebase Firestore)</div><div class="cs" id="db-sub">กำลังโหลด...</div></div>
+    </div>
+    <div class="db-stats" id="db-st"></div>
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <input type="text" id="db-q" placeholder="🔍 ค้นหาชื่อ..." style="flex:1;min-width:180px;" oninput="renderDB()">
+      <button class="btn btn-d btn-sm" onclick="askPin('clear-db')">🗑️ ล้างคลังทั้งหมด</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="db-t">
+        <thead><tr>
+          <th style="width:44px;">#</th>
+          <th>คำนำหน้า</th><th>ชื่อ</th><th>สกุล</th><th>ระดับชั้น</th><th style="width:55px;">เลขที่</th>
+          <th style="width:70px;">จัดการ</th>
+        </tr></thead>
+        <tbody id="db-tb"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ DEMO SECTION inside settings ══ -->
+  <div class="card" style="border: 2px solid rgba(200,150,12,0.25);">
+    <div class="ch sec-toggle open" onclick="toggleSec(this)">
+      <div style="display:flex;align-items:center;gap:11px;">
+        <div class="ci" style="background:linear-gradient(135deg,#1B5E20,#2E7D32);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <div><div class="ct">🧪 ข้อมูลจำลอง / ทดสอบระบบ</div><div class="cs">เติมฟอร์มด้วยตัวอย่าง หรือนำเข้านักเรียนจำลอง 15 คน</div></div>
+      </div>
+      <div class="arr"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <div class="sec-body" style="border-top:1px solid var(--gray-100);padding-top:18px;margin-top:4px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div style="background:var(--gold-pale);border-radius:10px;padding:14px;border:1px solid var(--gold-border);">
+          <div style="font-weight:700;font-size:.88rem;margin-bottom:8px;">📋 ฟอร์ม 106 – แบบ ร</div>
+          <div style="font-size:.79rem;color:var(--gray-700);line-height:1.7;margin-bottom:10px;">
+            วิชา ภาษาไทย 6 · รหัส ท33102<br>ชั้น ม.6 · ภาค 2/2567<br>นักเรียน 3 คน
+          </div>
+          <button class="btn btn-p" style="width:100%;padding:8px;font-size:.82rem;" onclick="loadDemo106()">เติมข้อมูล → ฟอร์ม 106</button>
+        </div>
+        <div style="background:var(--gold-pale);border-radius:10px;padding:14px;border:1px solid var(--gold-border);">
+          <div style="font-weight:700;font-size:.88rem;margin-bottom:8px;">📑 ฟอร์ม 107 – O, ร, มส</div>
+          <div style="font-size:.79rem;color:var(--gray-700);line-height:1.7;margin-bottom:10px;">
+            วิชา ภาษาไทย 2 · รหัส ท21102<br>ชั้น ม.1/1 · ภาค 2/2567<br>นักเรียน 3 คน
+          </div>
+          <button class="btn btn-p" style="width:100%;padding:8px;font-size:.82rem;" onclick="loadDemo107()">เติมข้อมูล → ฟอร์ม 107</button>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--gray-100);padding-top:14px;">
+        <div style="font-weight:700;font-size:.88rem;margin-bottom:10px;">💾 บันทึกนักเรียนจำลอง 15 คน เข้า Firestore</div>
+        <div style="overflow-x:auto;margin-bottom:12px;max-height:220px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px;">
+          <table class="db-t" style="font-size:.79rem;">
+            <thead><tr><th>#</th><th>คำนำหน้า</th><th>ชื่อ</th><th>สกุล</th><th>ระดับชั้น</th><th>เลขที่</th></tr></thead>
+            <tbody id="demo-preview-tb"></tbody>
+          </table>
+        </div>
+        <button class="btn btn-p" onclick="saveDemoStudents()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          บันทึกนักเรียนจำลองเข้า Firestore
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ─── STATE ───
+let sDB = [];
+let fbReady = false;
+let _db, _fm;
+
+// ─── FIREBASE ───
+window.addEventListener('firebaseReady', async () => {
+  _db = window._db; _fm = window._fbModules; fbReady = true;
+  await loadDB();
+  build106(); build107();
+  loadConfig();
+  document.getElementById('ld').style.display = 'none';
+});
+setTimeout(() => {
+  document.getElementById('ld').style.display = 'none';
+  build106(); build107();
+  loadConfig(); // loadConfig calls setTodayDate internally
+}, 5000);
+
+async function loadDB() {
+  try {
+    const { collection, getDocs } = _fm;
+    const snap = await getDocs(collection(_db,'students'));
+    sDB = [];
+    snap.forEach(d => sDB.push({ id: d.id, ...d.data() }));
+    // Sort client-side to avoid Firestore composite index requirement
+    sDB.sort((a,b) => {
+      const ca = (a.class||'').localeCompare(b.class||'', 'th');
+      if (ca !== 0) return ca;
+      return (a.firstName||'').localeCompare(b.firstName||'', 'th');
+    });
+    renderDB(); updateStats();
+    toast(`โหลดข้อมูล ${sDB.length} รายการ ✓`, 'ok');
+  } catch(e) {
+    toast('โหลด Firestore ไม่สำเร็จ: '+e.message, 'err');
+    document.getElementById('ld').style.display = 'none';
+  }
+}
+
+async function saveDB(students) {
+  if (!fbReady) { toast('Firebase ยังไม่พร้อม','err'); return; }
+  const { collection, addDoc, getDocs, deleteDoc, doc } = _fm;
+  try {
+    const snap = await getDocs(collection(_db,'students'));
+    await Promise.all([...snap.docs].map(d => deleteDoc(doc(_db,'students',d.id))));
+    await Promise.all(students.map(s => addDoc(collection(_db,'students'), s)));
+    await loadDB();
+    toast(`บันทึก ${students.length} รายการสำเร็จ ✓`, 'ok');
+  } catch(e) { toast('บันทึกไม่สำเร็จ: '+e.message,'err'); }
+}
+
+async function delStudent(id) {
+  if (!fbReady) return;
+  const { deleteDoc, doc } = _fm;
+  try { await deleteDoc(doc(_db,'students',id)); await loadDB(); toast('ลบสำเร็จ','ok'); }
+  catch(e) { toast('ลบไม่สำเร็จ','err'); }
+}
+
+async function confirmClear() {
+  if (!fbReady) return;
+  const { collection, getDocs, deleteDoc, doc } = _fm;
+  try {
+    const snap = await getDocs(collection(_db,'students'));
+    await Promise.all([...snap.docs].map(d => deleteDoc(doc(_db,'students',d.id))));
+    sDB = []; renderDB(); updateStats();
+    toast('ล้างคลังแล้ว ✓','ok');
+  } catch(e) { toast('เกิดข้อผิดพลาด: '+e.message,'err'); }
+}
+
+// ─── EXCEL IMPORT ───
+function importXls(e) { const f=e.target.files[0]; if(f) parseXls(f); }
+function dov(e) { e.preventDefault(); document.getElementById('uz').classList.add('drag'); }
+function dlv()  { document.getElementById('uz').classList.remove('drag'); }
+function ddr(e) { e.preventDefault(); dlv(); const f=e.dataTransfer.files[0]; if(f) parseXls(f); }
+
+function parseXls(file) {
+  const r = new FileReader();
+  r.onload = async (e) => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
+      if (!rows.length) { toast('ไม่พบข้อมูล','err'); return; }
+      const map = {};
+      Object.keys(rows[0]).forEach(k => {
+        const lk = k.toLowerCase().replace(/\s/g,'');
+        if (['คำนำหน้า','prefix','title','นำหน้า'].some(x=>lk.includes(x.replace(/\s/g,'').toLowerCase()))) map[k]='prefix';
+        else if (['ชื่อ','firstname','name'].some(x=>lk===x.toLowerCase())) map[k]='firstName';
+        else if (['สกุล','lastname','surname','นามสกุล'].some(x=>lk.includes(x.toLowerCase()))) map[k]='lastName';
+        else if (['ระดับชั้น','ชั้น','class','level','ห้อง'].some(x=>lk.includes(x.toLowerCase()))) map[k]='class';
+        else if (['เลขที่','no','num','number','เลข'].some(x=>lk.includes(x.toLowerCase()))) map[k]='no';
+      });
+      const students = rows.map(row => {
+        const s={prefix:'',firstName:'',lastName:'',class:'',no:''};
+        Object.entries(map).forEach(([k,f]) => s[f]=String(row[k]||'').trim());
+        return s;
+      }).filter(s=>s.firstName);
+      if (!students.length) { toast('ไม่พบคอลัมน์ที่ถูกต้อง ตรวจสอบ Header','err'); return; }
+      toast(`กำลังนำเข้า ${students.length} รายการ...`);
+      await saveDB(students);
+      document.getElementById('xi').value='';
+    } catch(err) { toast('เกิดข้อผิดพลาด: '+err.message,'err'); }
+  };
+  r.readAsArrayBuffer(file);
+}
+
+// ─── DB RENDER ───
+function renderDB() {
+  const q = (document.getElementById('db-q')?.value||'').toLowerCase();
+  const filtered = sDB.filter(s=>(s.prefix+s.firstName+s.lastName+s.class).toLowerCase().includes(q));
+  const tb = document.getElementById('db-tb');
+  if (!tb) return;
+  if (!filtered.length) { tb.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:22px;color:#888;">ไม่พบข้อมูล</td></tr>`; return; }
+  tb.innerHTML = filtered.map((s,i)=>`
+    <tr>
+      <td style="text-align:center;color:#888;font-size:.76rem;">${i+1}</td>
+      <td>${s.prefix||''}</td><td>${s.firstName||''}</td><td>${s.lastName||''}</td>
+      <td><span class="badge-cls">${s.class||'-'}</span></td>
+      <td style="text-align:center;color:#888;">${s.no||'-'}</td>
+      <td style="text-align:center;"><button class="del-btn" onclick="delStudent('${s.id}')">ลบ</button></td>
+    </tr>`).join('');
+}
+function updateStats() {
+  const cls=[...new Set(sDB.map(s=>s.class))].filter(Boolean).sort();
+  const el=document.getElementById('db-st'); const sub=document.getElementById('db-sub');
+  if(el) el.innerHTML=`<div class="sc">👥 รวม ${sDB.length} คน</div>`+cls.map(c=>`<div class="sc">📚 ${c}: ${sDB.filter(s=>s.class===c).length} คน</div>`).join('');
+  if(sub) sub.textContent=`${sDB.length} รายการ · ${cls.length} ระดับชั้น`;
+}
+
+// ─── BUILD 106 ROWS ───
+function build106() {
+  const n = parseInt(document.getElementById('rc-106')?.value||5);
+  const tb = document.getElementById('tb-106'); if(!tb) return; tb.innerHTML='';
+  for(let i=1;i<=n;i++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td class="rn">${i}</td>
+      <td><input type="text" class="c1" placeholder="ม.6" style="width:100%"></td>
+      <td><input type="number" class="n1" placeholder="#" style="width:100%"></td>
+      <td><div class="ac-wrap"><input type="text" class="nm1" placeholder="พิมพ์ชื่อ..." style="width:100%"
+              oninput="ac106(this,${i})" onblur="cac('ac6-${i}')">
+          <div class="ac-list" id="ac6-${i}"></div></div></td>
+      <td><input type="checkbox" class="w1"></td>
+      <td><input type="checkbox" class="m1"></td>
+      <td><input type="checkbox" class="f1"></td>
+      <td><input type="text" class="nt1" style="width:100%"></td>`;
+    tb.appendChild(tr);
+  }
+}
+
+function ac106(inp, i) {
+  const v=inp.value.toLowerCase(); const el=document.getElementById(`ac6-${i}`);
+  if(!v||!sDB.length){el.classList.remove('open');return;}
+  const m=sDB.filter(s=>(s.prefix+s.firstName+' '+s.lastName).toLowerCase().includes(v)).slice(0,8);
+  if(!m.length){el.classList.remove('open');return;}
+  el.innerHTML=m.map(s=>`<div class="ac-item" onmousedown="pick106(${i},'${esc(s.prefix+s.firstName+' '+s.lastName)}','${esc(s.class)}','${esc(s.no||'')}')">
+    <span>${s.prefix}${s.firstName} ${s.lastName}</span>
+    <span style="display:flex;gap:5px;align-items:center;">
+      ${s.no?`<span style="font-size:.72rem;color:#888;background:#f0f0e8;padding:1px 6px;border-radius:10px;">เลขที่ ${s.no}</span>`:''}
+      <span class="ac-class">${s.class}</span>
+    </span>
+  </div>`).join('');
+  el.classList.add('open');
+}
+function pick106(i,nm,cls,no){
+  const rows=document.querySelectorAll('#tb-106 tr');
+  const r=rows[i-1]; r.querySelector('.nm1').value=nm;
+  if(!r.querySelector('.c1').value) r.querySelector('.c1').value=cls;
+  if(no && !r.querySelector('.n1').value) r.querySelector('.n1').value=no;
+  document.getElementById(`ac6-${i}`).classList.remove('open');
+}
+
+// ─── BUILD 107 ROWS ───
+function build107() {
+  const n = parseInt(document.getElementById('rc-107')?.value||5);
+  const tb = document.getElementById('tb-107'); if(!tb) return; tb.innerHTML='';
+  for(let i=1;i<=n;i++){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="rn">${i}</td>
+      <td><input type="text" class="r1" placeholder="ม.1" style="width:100%"></td>
+      <td><div class="ac-wrap"><input type="text" class="nm7" placeholder="พิมพ์ชื่อ..." style="width:100%"
+              oninput="ac107(this,${i})" onblur="cac('ac7-${i}')">
+          <div class="ac-list" id="ac7-${i}"></div></div></td>
+      <td><input type="checkbox" class="o7"></td>
+      <td><input type="checkbox" class="r7"></td>
+      <td><input type="checkbox" class="m7"></td>
+      <td><input type="text" class="f17" style="width:100%;max-width:34px;text-align:center;padding:3px;"></td>
+      <td><input type="checkbox" class="fo7"></td>
+      <td><input type="checkbox" class="fr7"></td>
+      <td><input type="checkbox" class="fm7"></td>
+      <td><input type="text" class="nt7" style="width:100%"></td>`;
+    tb.appendChild(tr);
+  }
+}
+
+function ac107(inp,i){
+  const v=inp.value.toLowerCase(); const el=document.getElementById(`ac7-${i}`);
+  if(!v||!sDB.length){el.classList.remove('open');return;}
+  const m=sDB.filter(s=>(s.prefix+s.firstName+' '+s.lastName).toLowerCase().includes(v)).slice(0,8);
+  if(!m.length){el.classList.remove('open');return;}
+  el.innerHTML=m.map(s=>`<div class="ac-item" onmousedown="pick107(${i},'${esc(s.prefix+s.firstName+' '+s.lastName)}','${esc(s.class)}')">
+    <span>${s.prefix}${s.firstName} ${s.lastName}</span>
+    <span style="display:flex;gap:5px;align-items:center;">
+      ${s.no?`<span style="font-size:.72rem;color:#888;background:#f0f0e8;padding:1px 6px;border-radius:10px;">เลขที่ ${s.no}</span>`:''}
+      <span class="ac-class">${s.class}</span>
+    </span>
+  </div>`).join('');
+  el.classList.add('open');
+}
+function pick107(i,nm,cls){
+  const rows=document.querySelectorAll('#tb-107 tr');
+  const r=rows[i-1]; r.querySelector('.nm7').value=nm;
+  if(!r.querySelector('.r1').value) r.querySelector('.r1').value=cls;
+  document.getElementById(`ac7-${i}`).classList.remove('open');
+}
+function cac(id){ setTimeout(()=>{const el=document.getElementById(id);if(el)el.classList.remove('open');},180); }
+
+// ─── PREVIEW 106 ───
+function prev106() {
+  const dt=g('d-date'), mo=g('d-month'), yr=g('d-year'), sm=g('d-sem');
+  const tc=g('d-teacher'), gp=g('d-group'), sn=g('d-sname'), sc=g('d-scode'), cr=g('d-credit'), cl=g('d-class');
+  const rows=[];
+  document.querySelectorAll('#tb-106 tr').forEach((tr,i)=>{
+    const nm=tr.querySelector('.nm1')?.value||'';
+    const cls=tr.querySelector('.c1')?.value||'';
+    const num=tr.querySelector('.n1')?.value||'';
+    rows.push({no:i+1,cls,num,nm,
+      w:tr.querySelector('.w1')?.checked?'/':'',
+      m:tr.querySelector('.m1')?.checked?'/':'',
+      f:tr.querySelector('.f1')?.checked?'/':'',
+      nt:tr.querySelector('.nt1')?.value||''});
+  });
+
+  document.getElementById('pv-106-doc').innerHTML=`
+  <div class="print-doc" id="pdoc">
+    <span class="doc-code">วก.กทว.106</span>
+    <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" class="doc-logo-abs" alt="logo">
+    <div style="text-align:center;margin-top:28mm;margin-bottom:6mm;">
+      <div class="doc-title" style="text-decoration:underline;">แบบขออนุญาตให้ผลการเรียน "ร"</div>
+    </div>
+    <div class="doc-right">โรงเรียนกระดุมทองวิทยา</div>
+    <div class="doc-right">อำเภอกันทรารมย์ จังหวัดศรีสะเกษ 33130</div>
+    <div class="doc-right" style="margin-bottom:12px;">วันที่……${dt||'………'}……เดือน${mo||'……………'} พ.ศ ${yr||'2568'}</div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:0 10px;margin-bottom:8px;">
+      <span>เรื่อง</span><span>ขออนุญาตให้ผลการเรียน "ร"</span>
+      <span>เรียน</span><span>ผู้อำนวยการโรงเรียนกระดุมทองวิทยา</span>
+    </div>
+    <div style="margin-bottom:10px;text-align:justify;">
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ด้วยข้าพเจ้า${tc||'……………………………………'} ซึ่งเป็นครูสอนประจำกลุ่มสาระการเรียนรู้${gp||'……………'}
+      สอนวิชา……${sn||'……………'}……รหัสวิชา……${sc||'…………'}……หน่วยการเรียน……${cr||'……'}……ชั้น…${cl||'…'}…
+      ในภาคเรียนที่……${sm||'2'}……ปีการศึกษา………${yr||'2567'}………ขออนุญาตให้นักเรียนได้ผลการเรียน " ร " ดังต่อไปนี้
+    </div>
+    <table class="dt106">
+      <thead>
+        <tr>
+          <th rowspan="3" style="width:30px;">ที่</th>
+          <th rowspan="3" style="width:52px;">ชั้น</th>
+          <th rowspan="3" style="width:46px;">เลขที่</th>
+          <th rowspan="3">ชื่อ – สกุล</th>
+          <th colspan="3">เหตุที่ไม่ผ่าน</th>
+          <th rowspan="3" style="width:52px;">หมาย<br>เหตุ</th>
+        </tr>
+        <tr>
+          <th rowspan="2" style="width:50px;">ไม่ส่ง<br>งาน</th>
+          <th colspan="2">ขาดสอบ</th>
+        </tr>
+        <tr>
+          <th style="width:50px;">กลาง<br>ภาค</th>
+          <th style="width:50px;">ปลายภาค</th>
+        </tr>
+      </thead>
+      <tbody>${rows.map(r=>`
+        <tr>
+          <td>${r.no}</td><td>${r.cls}</td><td>${r.num}</td>
+          <td class="nc">${r.nm}</td>
+          <td>${r.w}</td><td>${r.m}</td><td>${r.f}</td><td>${r.nt}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="text-align:center;margin-top:12px;">จึงเรียนมาเพื่อโปรดพิจารณาอนุญาต</div>
+    <div style="margin-top:18px;display:flex;justify-content:flex-end;padding-right:8mm;">
+      <div style="text-align:center;min-width:160px;">
+        <div style="border-bottom:1px dotted #555;height:24px;width:200px;margin:0 auto 5px;"></div>
+        <div style="font-size:13px;">(${tc||'……………………………………'})</div>
+        <div style="font-size:12px;">ครูประจำวิชา</div>
+      </div>
+    </div>
+    <table class="appr-t">
+      <thead><tr><th style="width:32px;">ที่</th><th>ผู้เกี่ยวข้อง</th><th>ความเห็น</th><th style="width:110px;">ลายมือชื่อ</th></tr></thead>
+      <tbody>
+        <tr><td style="text-align:center;">1</td><td>หัวหน้ากลุ่มสาระ</td><td></td><td></td></tr>
+        <tr><td style="text-align:center;">2</td><td>หัวหน้าวัดผล ประเมินผล</td><td></td><td></td></tr>
+        <tr><td style="text-align:center;">3</td><td>หัวหน้าฝ่ายวิชาการ</td><td></td><td></td></tr>
+        <tr><td style="text-align:center;">4</td><td>รองผู้อำนวยการ</td><td></td><td></td></tr>
+        <tr><td style="text-align:center;">5</td><td>ผู้อำนวยการ</td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>`;
+
+  document.getElementById('pv-106').style.display='block';
+  document.getElementById('pv-106').scrollIntoView({behavior:'smooth'});
+  applyFontToPreview();
+  toast('สร้างตัวอย่าง 106 สำเร็จ ✓','ok');
+}
+
+// ─── PREVIEW 107 ───
+function prev107() {
+  const sn=g('e-sname'), sc=g('e-scode'), gp=g('e-group'), sm=g('e-sem'), yr=g('e-year'), tc=g('e-teacher');
+  const rows=[];
+  document.querySelectorAll('#tb-107 tr').forEach((tr,i)=>{
+    const nm=tr.querySelector('.nm7')?.value||'';
+    const rm=tr.querySelector('.r1')?.value||'';
+    const chk=cl=>tr.querySelector(cl)?.checked?'/':'';
+    rows.push({no:i+1,rm,nm,
+      o:chk('.o7'),r:chk('.r7'),ms:chk('.m7'),
+      f1:tr.querySelector('.f17')?.value||'',
+      fo:chk('.fo7'),fr:chk('.fr7'),fm:chk('.fm7'),
+      nt:tr.querySelector('.nt7')?.value||''});
+  });
+
+  document.getElementById('pv-107-doc').innerHTML=`
+  <div class="print-doc" id="pdoc">
+    <span class="doc-code">วก.กทว.107</span>
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:6mm;margin-bottom:4mm;">
+      <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" style="width:17mm;height:17mm;object-fit:contain;">
+      <div style="text-align:center;">
+        <div style="font-size:16px;font-weight:700;">โรงเรียนกระดุมทองวิทยา จังหวัดศรีสะเกษ</div>
+        <div style="font-size:15px;font-weight:700;text-decoration:underline;margin-top:3px;">บัญชีรายชื่อนักเรียนที่ติด O, ร, มส</div>
+      </div>
+    </div>
+    <div style="text-align:center;font-weight:700;font-size:13.5px;margin-bottom:3px;">
+      วิชา ${sn||'……………'} รหัสวิชา ${sc||'…………'} กลุ่มสาระการเรียนรู้${gp||'……………'}
+    </div>
+    <div style="text-align:center;font-weight:700;font-size:13.5px;margin-bottom:10px;">
+      ภาคเรียนที่ ${sm||'2'} ปีการศึกษา ${yr||'2567'}
+    </div>
+    <table class="dt107">
+      <thead>
+        <tr>
+          <th rowspan="2" style="width:30px;">ที่</th>
+          <th rowspan="2" style="width:52px;">ห้อง</th>
+          <th rowspan="2">ชื่อ – สกุล</th>
+          <th colspan="3">ผลการสอบ</th>
+          <th colspan="4">แก้ไขแล้ว</th>
+          <th rowspan="2" style="width:48px;">หมาย<br>เหตุ</th>
+        </tr>
+        <tr>
+          <th style="width:34px;">O</th><th style="width:34px;">ร</th><th style="width:34px;">มส</th>
+          <th style="width:34px;">1</th>
+          <th style="width:34px;">O</th><th style="width:34px;">ร</th><th style="width:34px;">มส</th>
+        </tr>
+      </thead>
+      <tbody>${rows.map(r=>`
+        <tr>
+          <td>${r.no}</td><td>${r.rm}</td>
+          <td class="nc">${r.nm}</td>
+          <td>${r.o}</td><td>${r.r}</td><td>${r.ms}</td>
+          <td>${r.f1}</td>
+          <td>${r.fo}</td><td>${r.fr}</td><td>${r.fm}</td>
+          <td>${r.nt}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="sign-grid" style="margin-top:16px;font-size:13px;line-height:2.0;">
+      <div>ลงชื่อ.................................ครูผู้สอน</div>
+      <div>ลงชื่อ.................................หัวหน้าวัดผล</div>
+      <div>ลงชื่อ.................................หัวหน้ากลุ่มสาระ</div>
+      <div>ลงชื่อ.................................หัวหน้าฝ่ายวิชาการ</div>
+    </div>
+    <div class="sign-grid" style="margin-top:18px;font-size:13px;line-height:2.0;">
+      <div>
+        <div>ลงชื่อ.................................รองผู้อำนวยการโรงเรียน</div>
+        <div style="padding-left:5mm;font-size:13px;">(${getCfg('deputy')||'นางสุคันทร บาอินทร์'})</div>
+      </div>
+      <div>
+        <div>ลงชื่อ.................................ผู้อำนวยการโรงเรียน</div>
+        <div style="padding-left:5mm;font-size:13px;">(${getCfg('director')||'นางสุนิสา ใจใหญ่'})</div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('pv-107').style.display='block';
+  document.getElementById('pv-107').scrollIntoView({behavior:'smooth'});
+  applyFontToPreview();
+  toast('สร้างตัวอย่าง 107 สำเร็จ ✓','ok');
+}
+
+// ─── CLEAR ───
+function clear106() {
+  ['d-sname','d-scode','d-credit','d-class'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  setTodayDate(); // reset date fields to today
+  build106();
+  document.getElementById('pv-106').style.display='none';
+  toast('ล้างฟอร์ม 106');
+}
+function clear107() {
+  ['e-sname','e-scode'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  build107();
+  document.getElementById('pv-107').style.display='none';
+  toast('ล้างฟอร์ม 107');
+}
+
+// ─── NAV ───
+function nav(id) {
+  ['land','106','107','set','demo'].forEach(x=>{
+    document.getElementById('p-'+x)?.classList.remove('active');
+    document.getElementById('nav-'+x)?.classList.remove('active');
+  });
+  document.getElementById('p-'+id)?.classList.add('active');
+  document.getElementById('nav-'+id)?.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ─── SECTION TOGGLE ───
+function toggleSec(hdr) {
+  hdr.classList.toggle('open');
+  const body = hdr.nextElementSibling;
+  if (body) body.classList.toggle('closed');
+}
+
+// ─── PIN SYSTEM ───
+const CORRECT_PIN = '1111';
+let pinBuf = '';
+let pinTarget = '';
+
+function askPin(target) {
+  pinBuf = ''; pinTarget = target;
+  updatePinDots();
+  document.getElementById('pin-err').textContent = '';
+  document.getElementById('pin-modal').style.display = 'flex';
+}
+
+function closePin() {
+  pinBuf = ''; pinTarget = '';
+  document.getElementById('pin-modal').style.display = 'none';
+}
+
+function pinKey(k) {
+  if (pinBuf.length >= 4) return;
+  pinBuf += k;
+  updatePinDots();
+  // auto submit when 4 digits entered - use requestAnimationFrame to ensure render first
+  if (pinBuf.length === 4) {
+    requestAnimationFrame(() => requestAnimationFrame(pinOk));
+  }
+}
+
+function pinDel() {
+  pinBuf = pinBuf.slice(0,-1);
+  updatePinDots();
+}
+
+function pinOk() {
+  if (pinBuf.length < 4) { document.getElementById('pin-err').textContent='กรอกให้ครบ 4 หลัก'; return; }
+  if (pinBuf === CORRECT_PIN) {
+    const target = pinTarget; // save BEFORE closePin() clears it
+    closePin();
+    if (target === 'set') nav('set');
+    else if (target === 'clear-db') confirmClear();
+    else if (typeof window[target] === 'function') window[target]();
+  } else {
+    pinBuf = '';
+    updatePinDots(true);
+    document.getElementById('pin-err').textContent = 'รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง';
+    setTimeout(()=>{ document.getElementById('pin-err').textContent=''; }, 2000);
+  }
+}
+
+function updatePinDots(shake=false) {
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    d.classList.toggle('filled', i<pinBuf.length);
+    if(shake) d.classList.add('shake');
+    else d.classList.remove('shake');
+  }
+}
+
+// keyboard support for PIN
+document.addEventListener('keydown', e => {
+  if (document.getElementById('pin-modal').style.display !== 'flex') return;
+  if (e.key>='0' && e.key<='9') pinKey(e.key);
+  else if (e.key==='Backspace') pinDel();
+  else if (e.key==='Enter') pinOk();
+  else if (e.key==='Escape') closePin();
+});
+
+// ─── CONFIG (localStorage) ───
+const CFG_KEY = 'gtw_config';
+function saveConfig() {
+  const cfg = {
+    teacher:  g('cfg-teacher'),
+    group:    g('cfg-group'),
+    year:     g('cfg-year'),
+    sem:      g('cfg-sem'),
+    deputy:   g('cfg-deputy'),
+    director: g('cfg-director'),
+  };
+  localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+  applyConfig(cfg);
+  toast('บันทึกการตั้งค่าแล้ว ✓', 'ok');
+}
+
+function loadConfig(showToast=false) {
+  try {
+    const cfg = JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
+    // Fill settings form
+    if(cfg.teacher)  document.getElementById('cfg-teacher').value  = cfg.teacher;
+    if(cfg.group)    document.getElementById('cfg-group').value    = cfg.group;
+    if(cfg.year)     document.getElementById('cfg-year').value     = cfg.year;
+    if(cfg.sem)      document.getElementById('cfg-sem').value      = cfg.sem;
+    if(cfg.deputy)   document.getElementById('cfg-deputy').value   = cfg.deputy;
+    if(cfg.director) document.getElementById('cfg-director').value = cfg.director;
+    applyConfig(cfg);
+    if(showToast) toast('โหลดค่าที่บันทึกไว้แล้ว ✓','ok');
+  } catch(e) {}
+  setTodayDate(); // always set current date on load
+}
+
+// ─── SET TODAY DATE on form 106 ───
+function setTodayDate() {
+  const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                       'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const now   = new Date();
+  const day   = now.getDate();
+  const month = THAI_MONTHS[now.getMonth()];
+  const yearBE= now.getFullYear() + 543;  // แปลงเป็น พ.ศ.
+
+  const elDate  = document.getElementById('d-date');
+  const elMonth = document.getElementById('d-month');
+  const elYear  = document.getElementById('d-year');
+
+  if(elDate)  elDate.value  = day;
+  if(elMonth) elMonth.value = month;
+  // ปีการศึกษาให้ set เฉพาะตอนยังไม่มีค่า (อาจถูก applyConfig set ไปแล้ว)
+  if(elYear && !elYear.value) elYear.value = yearBE;
+}
+
+function applyConfig(cfg) {
+  // Apply to form 106
+  if(cfg.teacher) { const el=document.getElementById('d-teacher'); if(el&&!el.dataset.dirty) el.value=cfg.teacher; }
+  if(cfg.group)   { const el=document.getElementById('d-group');   if(el&&!el.dataset.dirty) el.value=cfg.group;   }
+  if(cfg.year)    { const el=document.getElementById('d-year');    if(el&&!el.dataset.dirty) el.value=cfg.year;     }
+  if(cfg.sem)     { const el=document.getElementById('d-sem');     if(el)                     el.value=cfg.sem;     }
+  // Apply to form 107
+  if(cfg.teacher) { const el=document.getElementById('e-teacher'); if(el&&!el.dataset.dirty) el.value=cfg.teacher; }
+  if(cfg.group)   { const el=document.getElementById('e-group');   if(el&&!el.dataset.dirty) el.value=cfg.group;   }
+  if(cfg.year)    { const el=document.getElementById('e-year');    if(el&&!el.dataset.dirty) el.value=cfg.year;     }
+  if(cfg.sem)     { const el=document.getElementById('e-sem');     if(el)                     el.value=cfg.sem;     }
+}
+
+function getCfg(key) {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')[key]||''; } catch(e){ return ''; }
+}
+
+// ─── PRINT (new window - avoids all duplicate-page & clipping issues) ───
+function printDoc(containerId) {
+  const docEl = document.getElementById(containerId);
+  if (!docEl) { toast('ไม่พบเอกสาร','err'); return; }
+
+  // Build custom font CSS if a font is active
+  const activeFont = window._activeFont;
+  let fontFaceCSS = '';
+  let bodyFontFamily = "'Sarabun', sans-serif";
+
+  if (activeFont) {
+    fontFaceCSS = `
+      @font-face {
+        font-family: '${activeFont.name}';
+        src: url('${activeFont.dataUrl}') format('${activeFont.format}');
+        font-weight: normal; font-style: normal;
+      }`;
+    bodyFontFamily = `'${activeFont.name}', 'Sarabun', sans-serif`;
+  }
+
+  const printWin = window.open('', '_blank', 'width=900,height=700');
+  printWin.document.write(`<!DOCTYPE html>
+<html lang="th"><head>
+<meta charset="UTF-8">
+<title>พิมพ์เอกสาร</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  ${fontFaceCSS}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: A4 portrait; margin: 0; }
+  html, body { width: 210mm; background: white; }
+  body { font-family: ${bodyFontFamily}; font-size: 13px; color: #000; }
+  .print-doc {
+    width: 210mm; min-height: 297mm;
+    padding: 14mm 16mm 12mm 22mm;
+    position: relative;
+  }
+  .doc-code { position: absolute; top: 10mm; right: 13mm; font-size: 12px; font-weight: 700; }
+  .doc-logo-abs { position: absolute; top: 9mm; left: 17mm; width: 20mm; height: 20mm; object-fit: contain; }
+  .doc-right { text-align: right; }
+  table { border-collapse: collapse; }
+  .dt106 { width:100%; font-size:12px; margin: 10px 0; }
+  .dt106 th, .dt106 td { border: 1px solid #000; padding: 4px 5px; text-align: center; vertical-align: middle; line-height: 1.3; }
+  .dt106 th { font-weight: 700; background: #F8F8F0; }
+  .dt106 td.nc { text-align: left; padding-left: 7px; }
+  .dt107 { width:100%; font-size:11.5px; margin: 8px 0; }
+  .dt107 th, .dt107 td { border: 1px solid #000; padding: 3px 4px; text-align: center; vertical-align: middle; line-height: 1.3; }
+  .dt107 th { font-weight: 700; background: #F8F8F0; }
+  .dt107 td.nc { text-align: left; padding-left: 7px; }
+  .sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 14px; }
+  .sign-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .sign-line { border-bottom: 1px dotted #555; width: 75%; height: 20px; }
+  .sign-name { font-size: 12px; } .sign-role { font-size: 11px; }
+  .appr-t { width: 100%; font-size: 12px; margin-top: 14px; }
+  .appr-t th, .appr-t td { border: 1px solid #000; padding: 5px 9px; }
+  .appr-t th { background: #F8F8F0; font-weight: 700; text-align: center; }
+</style>
+</head><body>${docEl.innerHTML}</body></html>`);
+  printWin.document.close();
+  // Wait for fonts to load before printing
+  printWin.onload = () => {
+    setTimeout(() => { printWin.focus(); printWin.print(); }, 800);
+  };
+  setTimeout(() => { printWin.focus(); printWin.print(); }, 1400);
+}
+
+// ─── DEMO DATA ───
+const DEMO_STUDENTS = [
+  {prefix:'นาย',    firstName:'พิษณุวัฒน์', lastName:'พิละ',       class:'ม.6/1', no:'6'},
+  {prefix:'นางสาว', firstName:'ปาริชาต',    lastName:'สุดใจ',      class:'ม.6/1', no:'12'},
+  {prefix:'นาย',    firstName:'ธีรภัทร',    lastName:'แก้วมณี',    class:'ม.6/2', no:'21'},
+  {prefix:'นางสาว', firstName:'สุดารัตน์',  lastName:'พรมสิทธิ์',  class:'ม.6/2', no:'8'},
+  {prefix:'นาย',    firstName:'วิทยา',      lastName:'เกษมสุข',    class:'ม.5/1', no:'3'},
+  {prefix:'นางสาว', firstName:'กานต์ธิดา',  lastName:'ทองดี',      class:'ม.5/1', no:'15'},
+  {prefix:'นาย',    firstName:'ภัทรพล',     lastName:'สว่างศรี',   class:'ม.5/2', no:'7'},
+  {prefix:'เด็กชาย',firstName:'กิตติพงษ์',  lastName:'สุภาพ',      class:'ม.1/1', no:'2'},
+  {prefix:'เด็กชาย',firstName:'ณัฐวุฒิ',    lastName:'ยุรยาตร',    class:'ม.1/1', no:'5'},
+  {prefix:'เด็กชาย',firstName:'รัฐภูมิ',    lastName:'วงษ์แหล้',   class:'ม.1/1', no:'9'},
+  {prefix:'เด็กหญิง',firstName:'สุมิตรา',   lastName:'แสงจันทร์',  class:'ม.1/2', no:'4'},
+  {prefix:'เด็กหญิง',firstName:'นภาพร',     lastName:'เชื้อสาย',   class:'ม.1/2', no:'11'},
+  {prefix:'นาย',    firstName:'ประภาส',     lastName:'ดีมาก',      class:'ม.3/1', no:'1'},
+  {prefix:'นางสาว', firstName:'อรทัย',      lastName:'ใจงาม',      class:'ม.3/1', no:'14'},
+  {prefix:'นาย',    firstName:'สิทธิพร',    lastName:'มีสุข',      class:'ม.3/2', no:'6'},
+];
+
+function initDemoPreview() {
+  const tb = document.getElementById('demo-preview-tb');
+  if (!tb) return;
+  tb.innerHTML = DEMO_STUDENTS.map((s,i)=>`
+    <tr>
+      <td style="text-align:center;color:#888;font-size:.75rem;">${i+1}</td>
+      <td>${s.prefix}</td><td>${s.firstName}</td><td>${s.lastName}</td>
+      <td><span class="badge-cls">${s.class}</span></td>
+      <td style="text-align:center;color:#888;">${s.no||'-'}</td>
+    </tr>`).join('');
+}
+initDemoPreview();
+
+async function saveDemoStudents() {
+  if (!fbReady) { toast('Firebase ยังไม่พร้อม','err'); return; }
+  if (!confirm(`บันทึกนักเรียนจำลอง ${DEMO_STUDENTS.length} คน เข้า Firestore? (จะแทนที่ข้อมูลเดิมทั้งหมด)`)) return;
+  toast('กำลังบันทึก...');
+  await saveDB(DEMO_STUDENTS);
+}
+
+function loadDemo106() {
+  // Set form fields
+  const s = v => document.getElementById(v);
+  s('d-date').value    = '15';
+  s('d-month').value   = 'มีนาคม';
+  s('d-year').value    = '2567';
+  s('d-sem').value     = '2';
+  s('d-teacher').value = 'นายนนทพัทธ์ หิรัญเรือง';
+  s('d-group').value   = 'ภาษาไทย';
+  s('d-sname').value   = 'ภาษาไทย 6';
+  s('d-scode').value   = 'ท33102';
+  s('d-credit').value  = '1.0';
+  s('d-class').value   = 'ม.6';
+  // Set row count
+  s('rc-106').value = '3';
+  build106();
+  // Fill rows after build
+  setTimeout(()=>{
+    const rows = document.querySelectorAll('#tb-106 tr');
+    const data = [
+      {cls:'ม.6',num:'6', nm:'นายพิษณุวัฒน์ พิละ',  w:true,  m:false, f:true},
+      {cls:'ม.6',num:'12',nm:'นางสาวปาริชาต สุดใจ',  w:false, m:true,  f:false},
+      {cls:'ม.6',num:'21',nm:'นายธีรภัทร แก้วมณี',   w:true,  m:true,  f:false},
+    ];
+    data.forEach((d,i)=>{
+      if (!rows[i]) return;
+      rows[i].querySelector('.c1').value  = d.cls;
+      rows[i].querySelector('.n1').value  = d.num;
+      rows[i].querySelector('.nm1').value = d.nm;
+      rows[i].querySelector('.w1').checked = d.w;
+      rows[i].querySelector('.m1').checked = d.m;
+      rows[i].querySelector('.f1').checked = d.f;
+    });
+    toast('เติมข้อมูลจำลองลงฟอร์ม 106 แล้ว ✓','ok');
+    nav('106');
+    setTimeout(()=>prev106(),300);
+  }, 150);
+}
+
+function loadDemo107() {
+  const s = v => document.getElementById(v);
+  s('e-sname').value   = 'ภาษาไทย 2';
+  s('e-scode').value   = 'ท21102';
+  s('e-group').value   = 'ภาษาไทย';
+  s('e-sem').value     = '2';
+  s('e-year').value    = '2567';
+  s('e-teacher').value = 'นายนนทพัทธ์ หิรัญเรือง';
+  s('rc-107').value    = '3';
+  build107();
+  setTimeout(()=>{
+    const rows = document.querySelectorAll('#tb-107 tr');
+    const data = [
+      {rm:'ม.1/1', nm:'เด็กชายกิตติพงษ์ สุภาพ',  o:true,  r:false, ms:false, fo:false, fr:false, fm:false},
+      {rm:'ม.1/1', nm:'เด็กชายณัฐวุฒิ ยุรยาตร',   o:false, r:true,  ms:false, fo:false, fr:false, fm:false},
+      {rm:'ม.1/1', nm:'เด็กชายรัฐภูมิ วงษ์แหล้',  o:true,  r:false, ms:false, fo:true,  fr:false, fm:false},
+    ];
+    data.forEach((d,i)=>{
+      if (!rows[i]) return;
+      rows[i].querySelector('.r1').value   = d.rm;
+      rows[i].querySelector('.nm7').value  = d.nm;
+      rows[i].querySelector('.o7').checked  = d.o;
+      rows[i].querySelector('.r7').checked  = d.r;
+      rows[i].querySelector('.m7').checked  = d.ms;
+      rows[i].querySelector('.fo7').checked = d.fo;
+      rows[i].querySelector('.fr7').checked = d.fr;
+      rows[i].querySelector('.fm7').checked = d.fm;
+    });
+    toast('เติมข้อมูลจำลองลงฟอร์ม 107 แล้ว ✓','ok');
+    nav('107');
+    setTimeout(()=>prev107(),300);
+  },150);
+}
+
+// ─── DOWNLOAD TEMPLATE EXCEL ───
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  const wsData = [
+    ['คำนำหน้า','ชื่อ','สกุล','ระดับชั้น','เลขที่'],
+    ['นาย','สมชาย','ใจดี','ม.6/1',1],
+    ['นางสาว','สมหญิง','มีสุข','ม.6/1',2],
+    ['นาย','ประสิทธิ์','ดีงาม','ม.5/2',1],
+    ['นางสาว','วิภาดา','สว่างศรี','ม.5/2',2],
+    ['เด็กชาย','ปิยะ','แสงทอง','ม.1/1',1],
+    ['เด็กหญิง','มณีรัตน์','พรมดี','ม.1/1',2],
+    ['','','','',''],
+    ['** คำแนะนำ **','','','',''],
+    ['1. คอลัมน์ต้องมีครบ 5 คอลัมน์ตามที่ระบุ','','','',''],
+    ['2. คำนำหน้า เช่น นาย / นางสาว / เด็กชาย / เด็กหญิง','','','',''],
+    ['3. ระดับชั้น เช่น ม.1/1 หรือ ม.6/2','','','',''],
+    ['4. เลขที่ = เลขที่ในห้องเรียน (ตัวเลข)','','','',''],
+    ['5. บันทึกเป็น .xlsx แล้ว import เข้าระบบ','','','',''],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{wch:14},{wch:18},{wch:18},{wch:14},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, ws, 'ข้อมูลนักเรียน');
+  XLSX.writeFile(wb, 'template_นักเรียน_กระดุมทองวิทยา.xlsx');
+  toast('ดาวน์โหลด Template Excel แล้ว ✓','ok');
+}
+
+// ─── FONT MANAGEMENT ───
+window._loadedFonts = {};   // { name: { name, dataUrl, format, file } }
+window._activeFont  = null; // { name, dataUrl, format }
+
+function getFormatFromExt(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const map = { ttf:'truetype', otf:'opentype', woff:'woff', woff2:'woff2' };
+  return map[ext] || 'truetype';
+}
+
+function handleFontFiles(files) {
+  if (!files || !files.length) return;
+  [...files].forEach(file => readFontFile(file));
+}
+
+function handleFontDrop(e) {
+  const files = e.dataTransfer.files;
+  if (files) [...files].forEach(file => {
+    if (/\.(ttf|otf|woff|woff2)$/i.test(file.name)) readFontFile(file);
+  });
+}
+
+function readFontFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl  = e.target.result;
+    const format   = getFormatFromExt(file.name);
+    const fontName = file.name.replace(/\.[^.]+$/, ''); // strip extension
+
+    // Register @font-face in the main page too (for live preview)
+    const style = document.createElement('style');
+    style.textContent = `@font-face {
+      font-family: '${fontName}';
+      src: url('${dataUrl}') format('${format}');
+      font-weight: normal; font-style: normal;
+    }`;
+    document.head.appendChild(style);
+
+    window._loadedFonts[fontName] = { name: fontName, dataUrl, format };
+    renderFontUI();
+    toast(`โหลดฟอนต์ "${fontName}" แล้ว ✓`, 'ok');
+  };
+  reader.readAsDataURL(file);
+  // reset input so same file can be re-uploaded
+  document.getElementById('font-input').value = '';
+}
+
+function renderFontUI() {
+  const fonts = Object.values(window._loadedFonts);
+  const listEl  = document.getElementById('font-list');
+  const chipsEl = document.getElementById('font-chips');
+  const selEl   = document.getElementById('font-select');
+  if (!listEl) return;
+
+  listEl.style.display = fonts.length ? 'block' : 'none';
+
+  // Chips
+  chipsEl.innerHTML = fonts.map(f => `
+    <div style="
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 12px;background:var(--gold-mid);
+      border:1.5px solid var(--gold-border);border-radius:20px;
+      font-size:.8rem;font-weight:600;color:#5a3c00;
+      font-family:'${f.name}',sans-serif;
+    ">
+      🔤 ${f.name}
+      <button onclick="removeFont('${f.name}')" style="
+        background:none;border:none;cursor:pointer;
+        color:#C62828;font-size:.9rem;line-height:1;padding:0;
+      ">×</button>
+    </div>`).join('');
+
+  // Select
+  const cur = selEl.value;
+  selEl.innerHTML = `<option value="">-- ใช้ฟอนต์เริ่มต้น (Sarabun) --</option>`
+    + fonts.map(f => `<option value="${f.name}">${f.name}</option>`).join('');
+  if (cur && window._loadedFonts[cur]) selEl.value = cur;
+
+  previewFont();
+  updateFontLabel();
+}
+
+function previewFont() {
+  const name = document.getElementById('font-select')?.value;
+  const box  = document.getElementById('font-preview-box');
+  if (!box) return;
+  box.style.fontFamily = name ? `'${name}', sans-serif` : "'Sarabun', sans-serif";
+}
+
+function applyFont() {
+  const name = document.getElementById('font-select')?.value;
+  if (!name) {
+    window._activeFont = null;
+    toast('รีเซ็ตเป็นฟอนต์เริ่มต้น (Sarabun) แล้ว', 'ok');
+  } else {
+    window._activeFont = window._loadedFonts[name];
+    toast(`ใช้ฟอนต์ "${name}" กับเอกสารแล้ว ✓`, 'ok');
+  }
+  updateFontLabel();
+  // Apply live preview to document containers
+  applyFontToPreview();
+}
+
+function applyFontToPreview() {
+  const ff = window._activeFont
+    ? `'${window._activeFont.name}', 'Sarabun', sans-serif`
+    : "'Sarabun', sans-serif";
+  ['pv-106-doc','pv-107-doc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.fontFamily = ff;
+  });
+}
+
+function updateFontLabel() {
+  const el = document.getElementById('font-active-label');
+  if (!el) return;
+  el.textContent = window._activeFont
+    ? `✅ ฟอนต์ที่ใช้กับเอกสารตอนนี้: ${window._activeFont.name}`
+    : '⬜ ใช้ฟอนต์เริ่มต้น (Sarabun)';
+}
+
+function removeFont(name) {
+  delete window._loadedFonts[name];
+  if (window._activeFont?.name === name) {
+    window._activeFont = null;
+    applyFontToPreview();
+  }
+  renderFontUI();
+  toast(`ลบฟอนต์ "${name}" แล้ว`);
+}
+
+function clearFonts() {
+  window._loadedFonts = {};
+  window._activeFont  = null;
+  renderFontUI();
+  applyFontToPreview();
+  toast('ล้างฟอนต์ทั้งหมดแล้ว');
+}
+
+// ─── HELPERS ───
+function g(id) { return document.getElementById(id)?.value||''; }
+function esc(s) { return s.replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+function toast(msg,type='') {
+  const el=document.createElement('div');
+  el.className='toast '+(type||''); el.textContent=msg;
+  document.getElementById('tc').appendChild(el);
+  setTimeout(()=>el.remove(),3300);
+}
+</script>
+</body>
+</html>
